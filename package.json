@@ -34,7 +34,7 @@
     "html-webpack-plugin": "^5.6.8",
     "mini-css-extract-plugin": "^2.6.1",
     "postcss": "^8.4.14",
-    "postcss-import": "^14.1.0",
+    "postcss-import": "^17.0.0",
     "postcss-loader": "^7.0.0",
     "react-refresh": "^0.18.0",
     "shx": "^0.3.4",
