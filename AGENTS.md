@@ -30,9 +30,9 @@ behavior, acceptance criteria, privacy, and accessibility requirements.
 - Install dependencies: `mise run setup`
 - Start development server: `mise run dev`
 - Check TypeScript: `mise run typecheck`
+- Run tests once: `mise run test`
+- Watch tests: `mise exec -- npm run test:watch`
 - Build and validate the plugin: `mise run build`
-- Run tests: add the test runner in the implementation task, then keep its
-  command documented here and in `README.md`.
 
 ## Implementation rules
 
@@ -52,6 +52,7 @@ behavior, acceptance criteria, privacy, and accessibility requirements.
 ## Verification
 
 - Run `mise run typecheck` after TypeScript changes.
+- Run `mise run test` after behavior or test changes.
 - Run `mise run build` after manifest, widget, dependency, or build changes.
 - Add or update focused tests when implementing behavior from the acceptance
   criteria.

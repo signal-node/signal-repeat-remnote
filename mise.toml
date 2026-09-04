@@ -13,6 +13,10 @@ run = "npm run dev"
 description = "Run TypeScript type checking"
 run = "npm run check-types"
 
+[tasks.test]
+description = "Run the unit test suite once"
+run = "npm test"
+
 [tasks.build]
 description = "Validate and build the RemNote plugin package"
 run = "npm run build"
