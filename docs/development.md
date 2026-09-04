@@ -22,3 +22,7 @@ mise run build
 ```
 
 See `AGENTS.md` for repository-wide development constraints.
+
+The manual RemNote integration matrix, the temporary verification harness, and
+the resulting implementation decisions are documented in
+`remnote-sdk-verification.md`.
