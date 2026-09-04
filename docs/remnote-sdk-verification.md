@@ -50,7 +50,7 @@ type:
 | --- | --- | --- |
 | `forward` | `rem.backText` | Supported when non-empty |
 | `backward` | `rem.text` | Supported when non-empty |
-| `{ clozeId }` | No public API supplies the rendered answer segment | Out of scope for MVP |
+| `{ clozeId }` | The answer widget context has no dedicated rendered-answer field | Out of scope for MVP |
 
 If `cardId` is absent, the card cannot be distinguished safely as forward,
 backward, or Cloze. Signal Repeat must fall back to another target or show a
