@@ -29,8 +29,13 @@ Validate the TypeScript project and create a RemNote plugin package with:
 
 ```sh
 mise run typecheck
+mise run test
 mise run build
 ```
+
+Use `npm run test:watch` inside `mise exec --` when developing tests
+interactively. Test files live under `tests/` and use the `*.test.ts` naming
+convention.
 
 The build produces `PluginZip.zip`.
 
