@@ -1,0 +1,32 @@
+name: Bug report
+description: Report a reproducible problem in Signal Repeat
+title: "bug: "
+labels: [bug]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe what went wrong without including private RemNote content.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Use placeholder text instead of personal learning content.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: RemNote Desktop/Web, OS, Signal Repeat version
+    validations:
+      required: true

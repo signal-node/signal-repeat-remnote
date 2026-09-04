@@ -1,0 +1,18 @@
+[tools]
+node = "24.20.0"
+
+[tasks.setup]
+description = "Install project dependencies from package-lock.json"
+run = "npm ci --no-audit --no-fund"
+
+[tasks.dev]
+description = "Start the RemNote plugin development server"
+run = "npm run dev"
+
+[tasks.typecheck]
+description = "Run TypeScript type checking"
+run = "npm run check-types"
+
+[tasks.build]
+description = "Validate and build the RemNote plugin package"
+run = "npm run build"

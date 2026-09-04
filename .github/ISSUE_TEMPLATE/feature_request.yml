@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest an improvement to Signal Repeat
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What learning-flow problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope considerations
+      description: Note any privacy, accessibility, or RemNote integration implications.

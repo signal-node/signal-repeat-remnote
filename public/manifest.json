@@ -1,0 +1,22 @@
+{
+  "manifestVersion": 1,
+  "id": "signal_repeat",
+  "name": "Signal Repeat",
+  "author": "Signal, Not Volume",
+  "repoUrl": "https://github.com/signal-node/signal-repeat-remnote",
+  "version": {
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  },
+  "theme": [],
+  "enableOnMobile": false,
+  "description": "Repeat only what matters with short, focused sessions in RemNote.",
+  "requestNative": false,
+  "requiredScopes": [
+    {
+      "type": "All",
+      "level": "Read"
+    }
+  ]
+}
