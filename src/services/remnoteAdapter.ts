@@ -72,6 +72,7 @@ export type RemNoteSdkFacade = {
         dimensions: { height: number; width: number };
       },
     ) => Promise<void>;
+    registerSelectedTextWidget: (fileName: string) => Promise<void>;
     toast: (message: string) => Promise<void>;
   };
   settings: RepeatSettingsApi;
@@ -103,6 +104,7 @@ export type RemNoteAdapter = {
   getRepeatSettings: () => Promise<RepeatSettings>;
   registerRepeatSettings: () => Promise<void>;
   registerRepeatPopup: () => Promise<void>;
+  registerSelectedTextMenu: () => Promise<void>;
   registerCommand: (command: RepeatCommand) => Promise<void>;
   openRepeatPopup: (context: RepeatPopupContextData) => Promise<void>;
   closeRepeatPopup: () => Promise<void>;
@@ -188,6 +190,8 @@ export function createRemNoteAdapterFromSdk(
       sdk.app.registerPopupWidget('popup', {
         dimensions: { height: 600, width: 900 },
       }),
+    registerSelectedTextMenu: () =>
+      sdk.app.registerSelectedTextWidget('selectedText'),
     registerCommand: (command) => sdk.app.registerCommand(command),
     openRepeatPopup: (context) =>
       sdk.widget.openPopup('popup', context, false),
@@ -198,6 +202,7 @@ export function createRemNoteAdapterFromSdk(
 
 export function createRemNoteAdapter(plugin: RNPlugin): RemNoteAdapter {
   const popupLocation = 'Popup' as WidgetLocation;
+  const selectedTextMenuLocation = 'SelectedTextMenu' as WidgetLocation;
 
   return createRemNoteAdapterFromSdk({
     editor: {
@@ -217,6 +222,11 @@ export function createRemNoteAdapter(plugin: RNPlugin): RemNoteAdapter {
       registerCommand: (command) => plugin.app.registerCommand(command),
       registerPopupWidget: (fileName, options) =>
         plugin.app.registerWidget(fileName, popupLocation, options),
+      registerSelectedTextWidget: (fileName) =>
+        plugin.app.registerWidget(fileName, selectedTextMenuLocation, {
+          dimensions: { height: 'auto', width: '100%' },
+          widgetTabTitle: 'Signal Repeat',
+        }),
       toast: (message) => plugin.app.toast(message),
     },
     settings: plugin.settings,
