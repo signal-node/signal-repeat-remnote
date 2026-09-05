@@ -180,7 +180,12 @@ export function createRemNoteAdapterFromSdk(
             return plainEditorText;
           }
         }
+      } catch {
+        // The focused Rem API remains a safe fallback when the editor API is
+        // unavailable in the current host or context.
+      }
 
+      try {
         const rem = await sdk.focus.getFocusedRem();
         return rem?.text === undefined
           ? null

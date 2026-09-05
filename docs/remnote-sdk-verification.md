@@ -57,6 +57,20 @@ placeholder content only.
 | Duplicate prevention | A second Option+M invocation left exactly one popup iframe mounted. |
 | Cleanup and privacy | Escape closed the popup, the placeholder document was moved to Trash, and no learning content was logged, persisted by the plugin, or transmitted. |
 
+## Web focused-target verification
+
+The focused-target fallback was checked in RemNote Web on 2026-09-05 for issue
+#21 with a temporary document containing placeholder text only.
+
+| Check | Result |
+| --- | --- |
+| Active editor | With no text selected, Option+M displayed the complete focused Rem text and reported it through the `focused-rem` target path. |
+| Focused Rem fallback | Opening the placeholder Rem as a document and invoking Option+M outside its text editor displayed the same complete Rem text. |
+| Selection priority | Selecting only `editor` inside the placeholder Rem displayed exactly `editor`, confirming that selected text remains higher priority. |
+| Empty Rem | Invoking Option+M from a focused empty Rem showed the fixed target-missing toast and did not mount a popup. |
+| Rendering safety | Focused RichText is converted with the SDK's `richText.toString()` and rendered as React text; the focused-target render test confirms HTML-like input is escaped rather than inserted as markup. |
+| Cleanup and privacy | Escape restored focus after each popup, the temporary document was moved to Trash, and the plugin did not mutate, persist, log, or transmit Rem content. |
+
 ### Focused Rem
 
 Use `editor.getFocusedEditorText()` first because it reflects the active editor.
