@@ -118,6 +118,20 @@ describe('RemNote adapter reads', () => {
     ).resolves.toBe('focused Rem');
   });
 
+  it('falls back to the focused Rem when the editor API is unavailable', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.editor.getFocusedEditorText).mockRejectedValue(
+      new Error('editor API unavailable'),
+    );
+    vi.mocked(sdk.focus.getFocusedRem).mockResolvedValue({
+      text: text('focused Rem'),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFocusedRemText(),
+    ).resolves.toBe('focused Rem');
+  });
+
   it('falls back to the focused Rem when editor text is empty', async () => {
     const sdk = createSdk();
     vi.mocked(sdk.editor.getFocusedEditorText).mockResolvedValue(text('  '));
@@ -128,6 +142,17 @@ describe('RemNote adapter reads', () => {
     await expect(
       createRemNoteAdapterFromSdk(sdk).getFocusedRemText(),
     ).resolves.toBe('focused Rem');
+  });
+
+  it('returns empty plain text for a non-text focused Rem', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.focus.getFocusedRem).mockResolvedValue({
+      text: [{ i: 'i', url: 'https://example.invalid/image.png' }],
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFocusedRemText(),
+    ).resolves.toBe('');
   });
 });
 

@@ -69,6 +69,23 @@ describe('RepeatSessionModal', () => {
     expect(onClose).toHaveBeenCalledWith('completed');
   });
 
+  it('renders target content as escaped text instead of HTML', () => {
+    const markup = renderToStaticMarkup(
+      <RepeatSessionModal
+        targetText={'<img src=x onerror="privateLearningContent()">'}
+        durationMs={15_000}
+        showProgressBar={false}
+        showCloseHint={false}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain(
+      '&lt;img src=x onerror=&quot;privateLearningContent()&quot;&gt;',
+    );
+    expect(markup).not.toContain('<img src="x"');
+  });
+
   it('recognizes only Escape as the cancel key', () => {
     expect(isRepeatSessionCancelKey('Escape')).toBe(true);
     expect(isRepeatSessionCancelKey('Enter')).toBe(false);
