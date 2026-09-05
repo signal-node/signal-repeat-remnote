@@ -1,9 +1,10 @@
 import { declareIndexPlugin, type ReactRNPlugin } from '@remnote/plugin-sdk';
+import { registerRepeatSettings } from '../services/settingsService';
 import '../style.css';
 import '../index.css';
 
-async function onActivate(_plugin: ReactRNPlugin): Promise<void> {
-  // Plugin registration is added incrementally from the product specification.
+async function onActivate(plugin: ReactRNPlugin): Promise<void> {
+  await registerRepeatSettings(plugin.settings);
 }
 
 async function onDeactivate(_plugin: ReactRNPlugin): Promise<void> {}
