@@ -89,6 +89,19 @@ content was not copied into logs or documentation.
 | Unsupported cards | Missing card IDs, empty answers, and Cloze cards resolve to no target in focused tests; Cloze answer extraction remains outside the MVP. |
 | Privacy and mutation | Source inspection found no logging, storage, or network path for answer content. Signal Repeat called no rating, scheduling, queue-advance, or Rem-write API. |
 
+## Web MVP regression verification
+
+The completed MVP was regression-checked in RemNote Web on 2026-09-05 for
+issue #23. Only placeholder preview content was recorded; learning content was
+not copied into this document, logs, storage, or network requests.
+
+| Check | Result |
+| --- | --- |
+| Long content | The 24-line placeholder preview scrolled from the opening lines to later lines without clipping, and the focused close button retained a visible outline. |
+| 30-second duration | The revealed-card action displayed **Repeat · 30s**. The popup was absent at the approximately 33-second observation, including browser-automation latency, and the same revealed card and rating controls remained available. |
+| Unsupported card | Invoking the action for a Cloze card produced the fixed target-missing notification and opened no popup. |
+| Cleanup | No card rating was selected and no queue-advance API was called. Repeat duration was restored to the 15-second default after the check. |
+
 ### Focused Rem
 
 Use `editor.getFocusedEditorText()` first because it reflects the active editor.

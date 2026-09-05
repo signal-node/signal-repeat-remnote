@@ -73,23 +73,39 @@ describe('resolveRepeatTarget', () => {
     await expect(resolveRepeatTarget(adapter)).resolves.toBeNull();
   });
 
-  it('distinguishes an API failure without including learning content', async () => {
-    const adapter = createTargetAdapter();
-    vi.mocked(adapter.getSelectedText).mockRejectedValue(
-      new RemNoteAdapterError({
-        operation: 'selected-text',
-        code: 'api-unavailable',
-      }),
-    );
+  it.each([
+    ['selected-text', 'getSelectedText'] as const,
+    ['flashcard-answer', 'getFlashcardAnswer'] as const,
+    ['focused-rem', 'getFocusedRemText'] as const,
+  ])(
+    'distinguishes a %s API failure without including learning content',
+    async (operation, failingReader) => {
+      const adapter = createTargetAdapter();
+      vi.mocked(adapter[failingReader]).mockRejectedValue(
+        new RemNoteAdapterError({
+          operation,
+          code: 'api-unavailable',
+        }),
+      );
 
-    const error = await resolveRepeatTarget(adapter).catch((cause: unknown) => cause);
-    expect(error).toBeInstanceOf(TargetResolutionError);
-    expect(error).toMatchObject({
-      info: { operation: 'selected-text', code: 'api-unavailable' },
-    });
-    expect(String(error)).not.toContain('private learning content');
-    expect(adapter.getFlashcardAnswer).not.toHaveBeenCalled();
-  });
+      const error = await resolveRepeatTarget(adapter).catch(
+        (cause: unknown) => cause,
+      );
+      expect(error).toBeInstanceOf(TargetResolutionError);
+      expect(error).toMatchObject({
+        info: { operation, code: 'api-unavailable' },
+      });
+      expect(String(error)).not.toContain('private learning content');
+
+      if (failingReader === 'getSelectedText') {
+        expect(adapter.getFlashcardAnswer).not.toHaveBeenCalled();
+        expect(adapter.getFocusedRemText).not.toHaveBeenCalled();
+      }
+      if (failingReader === 'getFlashcardAnswer') {
+        expect(adapter.getFocusedRemText).not.toHaveBeenCalled();
+      }
+    },
+  );
 });
 
 describe('resolveSelectedTextTarget', () => {
