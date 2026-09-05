@@ -20,6 +20,28 @@ type TargetReader = {
   read: () => Promise<string | null>;
 };
 
+async function resolveFromReader(reader: TargetReader): Promise<RepeatTarget | null> {
+  try {
+    const text = (await reader.read())?.trim();
+    return text ? { text, source: reader.source } : null;
+  } catch (cause) {
+    if (cause instanceof RemNoteAdapterError) {
+      throw new TargetResolutionError(cause.info);
+    }
+
+    throw cause;
+  }
+}
+
+export function resolveSelectedTextTarget(
+  adapter: Pick<RemNoteAdapter, 'getSelectedText'>,
+): Promise<RepeatTarget | null> {
+  return resolveFromReader({
+    source: 'selected-text',
+    read: adapter.getSelectedText,
+  });
+}
+
 export async function resolveRepeatTarget(
   adapter: Pick<
     RemNoteAdapter,
@@ -33,17 +55,9 @@ export async function resolveRepeatTarget(
   ];
 
   for (const reader of readers) {
-    try {
-      const text = (await reader.read())?.trim();
-      if (text) {
-        return { text, source: reader.source };
-      }
-    } catch (cause) {
-      if (cause instanceof RemNoteAdapterError) {
-        throw new TargetResolutionError(cause.info);
-      }
-
-      throw cause;
+    const target = await resolveFromReader(reader);
+    if (target) {
+      return target;
     }
   }
 

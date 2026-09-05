@@ -5,6 +5,7 @@ import {
 } from '../src/services/remnoteAdapter';
 import {
   resolveRepeatTarget,
+  resolveSelectedTextTarget,
   TargetResolutionError,
 } from '../src/services/targetResolver';
 
@@ -88,5 +89,25 @@ describe('resolveRepeatTarget', () => {
     });
     expect(String(error)).not.toContain('private learning content');
     expect(adapter.getFlashcardAnswer).not.toHaveBeenCalled();
+  });
+});
+
+describe('resolveSelectedTextTarget', () => {
+  it('returns only the selected text target', async () => {
+    const adapter = createTargetAdapter({ selected: '  selection only  ' });
+
+    await expect(resolveSelectedTextTarget(adapter)).resolves.toEqual({
+      text: 'selection only',
+      source: 'selected-text',
+    });
+    expect(adapter.getFlashcardAnswer).not.toHaveBeenCalled();
+    expect(adapter.getFocusedRemText).not.toHaveBeenCalled();
+  });
+
+  it('does not fall back when the selection disappears', async () => {
+    const adapter = createTargetAdapter({ focused: 'focused' });
+
+    await expect(resolveSelectedTextTarget(adapter)).resolves.toBeNull();
+    expect(adapter.getFocusedRemText).not.toHaveBeenCalled();
   });
 });

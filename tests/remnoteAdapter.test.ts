@@ -24,6 +24,7 @@ function createSdk(): RemNoteSdkFacade {
     app: {
       registerCommand: vi.fn(async () => undefined),
       registerPopupWidget: vi.fn(async () => undefined),
+      registerSelectedTextWidget: vi.fn(async () => undefined),
       toast: vi.fn(async () => undefined),
     },
     settings: {
@@ -86,5 +87,17 @@ describe('RemNote adapter reads', () => {
       info: { operation: 'focused-rem', code: 'api-unavailable' },
     });
     expect(String(error)).not.toContain('private learning content');
+  });
+});
+
+describe('RemNote adapter registration', () => {
+  it('registers the selected-text widget through the SDK boundary', async () => {
+    const sdk = createSdk();
+
+    await createRemNoteAdapterFromSdk(sdk).registerSelectedTextMenu();
+
+    expect(sdk.app.registerSelectedTextWidget).toHaveBeenCalledWith(
+      'selectedText',
+    );
   });
 });

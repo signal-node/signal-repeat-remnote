@@ -34,6 +34,14 @@ the MVP must resolve the selection immediately in the registered command before
 opening the popup. If that widget location is reconsidered later, its selection
 timing must be reverified against the then-current host.
 
+The integration was rechecked in RemNote Web on 2026-09-05 for issue #19. The
+registered widget is available from **… → Search & Plugins → Signal Repeat** in
+the selected-text toolbar. Its **Repeat in focus** action resolved only the
+selected range, opened the popup immediately, preserved the source Rem, closed
+with Escape, and closed automatically after the default 15 seconds. This Web
+result does not supersede the Desktop 1.28.11 limitation recorded below, so the
+keyboard command remains an important fallback.
+
 ### Focused Rem
 
 Use `editor.getFocusedEditorText()` first because it reflects the active editor.

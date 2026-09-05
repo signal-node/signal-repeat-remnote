@@ -11,6 +11,7 @@ async function onActivate(plugin: ReactRNPlugin): Promise<void> {
   const adapter = createRemNoteAdapter(plugin);
   await adapter.registerRepeatSettings();
   await adapter.registerRepeatPopup();
+  await adapter.registerSelectedTextMenu();
   await adapter.registerCommand({
     id: 'signal-repeat.open-preview-session',
     name: 'Signal Repeat: Open preview session',
