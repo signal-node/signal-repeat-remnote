@@ -1,1 +1,126 @@
-/* Signal Repeat widget-specific styles belong here. */
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  min-height: 100vh;
+  background: transparent;
+}
+
+.signal-repeat-session {
+  box-sizing: border-box;
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  width: 100%;
+  height: 100vh;
+  min-height: 100%;
+  padding: clamp(3rem, 7vw, 6rem) clamp(1.5rem, 6vw, 5rem)
+    clamp(1.5rem, 4vw, 3rem);
+  overflow: hidden;
+  color: #f8fafc;
+  background: rgba(10, 15, 25, 0.97);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 1rem;
+  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.44);
+}
+
+.signal-repeat-session--loading {
+  display: block;
+}
+
+.signal-repeat-session__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  place-items: center;
+  color: #cbd5e1;
+  font: inherit;
+  font-size: 1.75rem;
+  line-height: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.signal-repeat-session__close:hover {
+  color: #fff;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.signal-repeat-session__close:focus-visible {
+  outline: 3px solid #7dd3fc;
+  outline-offset: 2px;
+}
+
+.signal-repeat-session__content {
+  display: grid;
+  min-height: 0;
+  overflow: auto;
+  place-items: center;
+  scrollbar-gutter: stable;
+}
+
+.signal-repeat-session__target {
+  width: min(100%, 52rem);
+  margin: auto;
+  padding: 1rem 0;
+  overflow-wrap: anywhere;
+  color: #f8fafc;
+  font-size: clamp(1.75rem, 4.5vw, 3.75rem);
+  font-weight: 650;
+  line-height: 1.35;
+  text-align: center;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+.signal-repeat-session__footer {
+  width: min(100%, 40rem);
+  margin: clamp(1.5rem, 5vh, 3rem) auto 0;
+}
+
+.signal-repeat-progress {
+  width: 100%;
+  height: 0.25rem;
+  overflow: hidden;
+  background: rgba(148, 163, 184, 0.22);
+  border-radius: 999px;
+}
+
+.signal-repeat-progress__fill {
+  width: 100%;
+  height: 100%;
+  background: #38bdf8;
+  border-radius: inherit;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 125ms linear;
+}
+
+.signal-repeat-session__hint {
+  margin: 0.85rem 0 0;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.signal-repeat-session__hint kbd {
+  padding: 0.1rem 0.4rem;
+  color: #cbd5e1;
+  font: inherit;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.36);
+  border-radius: 0.3rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal-repeat-progress__fill {
+    transition: none;
+  }
+}
