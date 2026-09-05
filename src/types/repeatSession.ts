@@ -11,3 +11,12 @@ export type RepeatSessionState =
   | 'running'
   | 'finished'
   | 'cancelled';
+
+export type RepeatPopupContextData = {
+  targetText: string;
+  durationSeconds: number;
+  showProgressBar: boolean;
+  showCloseHint: boolean;
+};
+
+export type RepeatSessionCloseReason = 'completed' | 'cancelled';
