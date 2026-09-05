@@ -83,4 +83,23 @@ describe('startRepeat', () => {
       throw new Error('read failed');
     })).resolves.toBe('failed');
   });
+
+  it('does not open a popup after its owner is deactivated', async () => {
+    const adapter = createAdapter();
+    let active = true;
+
+    await expect(
+      startRepeat(
+        adapter,
+        async () => {
+          active = false;
+          return { text: 'selected text', source: 'selected-text' };
+        },
+        () => active,
+      ),
+    ).resolves.toBe('cancelled');
+    expect(adapter.getRepeatSettings).not.toHaveBeenCalled();
+    expect(adapter.openRepeatPopup).not.toHaveBeenCalled();
+    expect(adapter.showToast).not.toHaveBeenCalled();
+  });
 });
