@@ -2,9 +2,13 @@
 
 ## Supported versions
 
-Signal Repeat is under initial development and has no supported public release.
-Security fixes are applied to the latest revision of `main`. This section will
-be updated when version `0.1.0` is released.
+Security fixes are applied to the latest release and the latest revision of
+`main`.
+
+| Version | Supported |
+| --- | --- |
+| 0.1.x | Yes |
+| Earlier development versions | No |
 
 ## Reporting a vulnerability
 

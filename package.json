@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "signal-repeat-remnote",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A focused repetition plugin for RemNote.",
   "license": "MIT",
   "allowScripts": {
