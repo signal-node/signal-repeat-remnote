@@ -1,27 +1,22 @@
 import {
   declareIndexPlugin,
   type ReactRNPlugin,
-  WidgetLocation,
 } from '@remnote/plugin-sdk';
-import {
-  getRepeatSettings,
-  registerRepeatSettings,
-} from '../services/settingsService';
+import { createRemNoteAdapter } from '../services/remnoteAdapter';
 import type { RepeatPopupContextData } from '../types/repeatSession';
 import '../style.css';
 import '../index.css';
 
 async function onActivate(plugin: ReactRNPlugin): Promise<void> {
-  await registerRepeatSettings(plugin.settings);
-  await plugin.app.registerWidget('popup', WidgetLocation.Popup, {
-    dimensions: { height: 600, width: 900 },
-  });
-  await plugin.app.registerCommand({
+  const adapter = createRemNoteAdapter(plugin);
+  await adapter.registerRepeatSettings();
+  await adapter.registerRepeatPopup();
+  await adapter.registerCommand({
     id: 'signal-repeat.open-preview-session',
     name: 'Signal Repeat: Open preview session',
     description: 'Open a repeat session with fixed placeholder text.',
     action: async () => {
-      const settings = await getRepeatSettings(plugin.settings);
+      const settings = await adapter.getRepeatSettings();
       const context: RepeatPopupContextData = {
         targetText: 'Repeat only what matters.',
         durationSeconds: settings.duration,
@@ -29,7 +24,7 @@ async function onActivate(plugin: ReactRNPlugin): Promise<void> {
         showCloseHint: settings.showCloseHint,
       };
 
-      await plugin.widget.openPopup('popup', context, false);
+      await adapter.openRepeatPopup(context);
     },
   });
 }
