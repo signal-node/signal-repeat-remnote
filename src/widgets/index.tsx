@@ -3,33 +3,39 @@ import {
   type ReactRNPlugin,
 } from '@remnote/plugin-sdk';
 import { createRemNoteAdapter } from '../services/remnoteAdapter';
-import type { RepeatPopupContextData } from '../types/repeatSession';
+import {
+  createRepeatCommandController,
+  type RepeatCommandController,
+} from '../services/repeatCommand';
 import '../style.css';
 import '../index.css';
 
-async function onActivate(plugin: ReactRNPlugin): Promise<void> {
-  const adapter = createRemNoteAdapter(plugin);
-  await adapter.registerRepeatSettings();
-  await adapter.registerRepeatPopup();
-  await adapter.registerSelectedTextMenu();
-  await adapter.registerCommand({
-    id: 'signal-repeat.open-preview-session',
-    name: 'Signal Repeat: Open preview session',
-    description: 'Open a repeat session with fixed placeholder text.',
-    action: async () => {
-      const settings = await adapter.getRepeatSettings();
-      const context: RepeatPopupContextData = {
-        targetText: 'Repeat only what matters.',
-        durationSeconds: settings.duration,
-        showProgressBar: settings.showProgressBar,
-        showCloseHint: settings.showCloseHint,
-      };
+let repeatCommandController: RepeatCommandController | undefined;
 
-      await adapter.openRepeatPopup(context);
-    },
-  });
+async function onActivate(plugin: ReactRNPlugin): Promise<void> {
+  if (repeatCommandController) {
+    return;
+  }
+
+  const adapter = createRemNoteAdapter(plugin);
+  const controller = createRepeatCommandController(adapter);
+  repeatCommandController = controller;
+
+  try {
+    await adapter.registerRepeatSettings();
+    await adapter.registerRepeatPopup();
+    await adapter.registerSelectedTextMenu();
+    await adapter.registerCommand(controller.command);
+  } catch (cause) {
+    controller.deactivate();
+    repeatCommandController = undefined;
+    throw cause;
+  }
 }
 
-async function onDeactivate(_plugin: ReactRNPlugin): Promise<void> {}
+async function onDeactivate(_plugin: ReactRNPlugin): Promise<void> {
+  repeatCommandController?.deactivate();
+  repeatCommandController = undefined;
+}
 
 declareIndexPlugin(onActivate, onDeactivate);

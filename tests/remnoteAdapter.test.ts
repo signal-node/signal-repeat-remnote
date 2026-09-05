@@ -10,7 +10,10 @@ const text = (value: string): RichTextInterface => [value];
 
 function createSdk(): RemNoteSdkFacade {
   return {
-    editor: { getSelectedText: vi.fn(async () => undefined) },
+    editor: {
+      getSelectedText: vi.fn(async () => undefined),
+      getFocusedEditorText: vi.fn(async () => undefined),
+    },
     focus: { getFocusedRem: vi.fn(async () => undefined) },
     queue: {
       hasRevealedAnswer: vi.fn(async () => false),
@@ -87,6 +90,44 @@ describe('RemNote adapter reads', () => {
       info: { operation: 'focused-rem', code: 'api-unavailable' },
     });
     expect(String(error)).not.toContain('private learning content');
+  });
+
+  it('prefers focused editor text over the focused Rem', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.editor.getFocusedEditorText).mockResolvedValue(
+      text('focused editor'),
+    );
+    vi.mocked(sdk.focus.getFocusedRem).mockResolvedValue({
+      text: text('focused Rem'),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFocusedRemText(),
+    ).resolves.toBe('focused editor');
+    expect(sdk.focus.getFocusedRem).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the focused Rem when editor text is unavailable', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.focus.getFocusedRem).mockResolvedValue({
+      text: text('focused Rem'),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFocusedRemText(),
+    ).resolves.toBe('focused Rem');
+  });
+
+  it('falls back to the focused Rem when editor text is empty', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.editor.getFocusedEditorText).mockResolvedValue(text('  '));
+    vi.mocked(sdk.focus.getFocusedRem).mockResolvedValue({
+      text: text('focused Rem'),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFocusedRemText(),
+    ).resolves.toBe('focused Rem');
   });
 });
 

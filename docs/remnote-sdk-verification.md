@@ -1,9 +1,10 @@
 # RemNote SDK integration verification
 
-This document records the integration decisions and manual checks for GitHub
-issue #13. The temporary verification widgets reported metadata only; they did
-not display, persist, or log selected text, Rem content, or flashcard content.
-They were removed after the checks so diagnostic controls are not shipped.
+This document records the integration decisions and manual checks that began in
+GitHub issue #13. The temporary verification widgets reported metadata only;
+they did not display, persist, or log selected text, Rem content, or flashcard
+content. They were removed after the checks so diagnostic controls are not
+shipped.
 
 ## Static SDK contract
 
@@ -41,6 +42,20 @@ selected range, opened the popup immediately, preserved the source Rem, closed
 with Escape, and closed automatically after the default 15 seconds. This Web
 result does not supersede the Desktop 1.28.11 limitation recorded below, so the
 keyboard command remains an important fallback.
+
+## Web command verification
+
+The product command was checked in RemNote Web on 2026-09-05 for issue #20 with
+placeholder content only.
+
+| Check | Result |
+| --- | --- |
+| Omnibar registration | **Signal Repeat: Repeat in focus** appeared under Plugin and opened the repeat popup. |
+| Default shortcut | Option+M opened the same repeat flow. |
+| Target priority | Selecting only `selected target` from a longer placeholder Rem displayed exactly that selected range. |
+| Missing target | Invoking the command from the Documents page showed the fixed target-missing toast and did not open a popup. |
+| Duplicate prevention | A second Option+M invocation left exactly one popup iframe mounted. |
+| Cleanup and privacy | Escape closed the popup, the placeholder document was moved to Trash, and no learning content was logged, persisted by the plugin, or transmitted. |
 
 ### Focused Rem
 
