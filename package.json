@@ -18,13 +18,13 @@
   },
   "dependencies": {
     "@remnote/plugin-sdk": "0.0.46",
-    "react": "^17.0.2",
+    "react": "^19.2.8",
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
     "@pmmmwh/react-refresh-webpack-plugin": "^0.6.3",
     "@types/node": "^18.0.3",
-    "@types/react": "^17.0.2",
+    "@types/react": "^19.2.18",
     "@types/react-dom": "^17.0.2",
     "autoprefixer": "^10.5.4",
     "bestzip": "^2.2.1",
