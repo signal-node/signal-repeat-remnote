@@ -29,11 +29,11 @@ Before opening a pull request, run:
 
 ```sh
 mise run typecheck
+mise run test
 mise run build
 ```
 
-Add focused tests when implementing behavior. The test runner will be added as
-part of the first behavior implementation task.
+Add or update focused tests when implementing behavior.
 
 ## Privacy and security
 
