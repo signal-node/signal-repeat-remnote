@@ -48,7 +48,6 @@ export type RemNoteSdkFacade = {
     getSelectedText: () => Promise<
       { richText: RichTextInterface } | undefined
     >;
-    getFocusedEditorText: () => Promise<RichTextInterface | undefined>;
   };
   focus: {
     getFocusedRem: () => Promise<AdapterRem | undefined>;
@@ -171,27 +170,11 @@ export function createRemNoteAdapterFromSdk(
         return rem ? answerRichText(card.type, rem) : undefined;
       }),
 
-    getFocusedRemText: async () => {
-      try {
-        const focusedEditorText = await sdk.editor.getFocusedEditorText();
-        if (focusedEditorText !== undefined) {
-          const plainEditorText = await sdk.richText.toString(focusedEditorText);
-          if (plainEditorText.trim()) {
-            return plainEditorText;
-          }
-        }
-
+    getFocusedRemText: () =>
+      readPlainText(sdk, 'focused-rem', async () => {
         const rem = await sdk.focus.getFocusedRem();
-        return rem?.text === undefined
-          ? null
-          : await sdk.richText.toString(rem.text);
-      } catch {
-        throw new RemNoteAdapterError({
-          operation: 'focused-rem',
-          code: 'api-unavailable',
-        });
-      }
-    },
+        return rem?.text;
+      }),
 
     getPopupContextData: async () => {
       try {
@@ -228,7 +211,6 @@ export function createRemNoteAdapter(plugin: RNPlugin): RemNoteAdapter {
   return createRemNoteAdapterFromSdk({
     editor: {
       getSelectedText: () => plugin.editor.getSelectedText(),
-      getFocusedEditorText: () => plugin.editor.getFocusedEditorText(),
     },
     focus: {
       getFocusedRem: () => plugin.focus.getFocusedRem(),
