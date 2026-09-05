@@ -101,6 +101,33 @@ describe('createRepeatTimer', () => {
     expect(onComplete).toHaveBeenCalledOnce();
   });
 
+  it('clears its scheduled work when the elapsed duration completes', () => {
+    let currentTime = 0;
+    let scheduledUpdate: (() => void) | undefined;
+    const handle = 7 as unknown as ReturnType<typeof globalThis.setInterval>;
+    const clearSchedule = vi.fn();
+    const onComplete = vi.fn();
+
+    createRepeatTimer({
+      durationMs: 1_000,
+      onTick: vi.fn(),
+      onComplete,
+      now: () => currentTime,
+      schedule: (update) => {
+        scheduledUpdate = update;
+        return handle;
+      },
+      clearSchedule,
+    });
+
+    currentTime = 1_000;
+    scheduledUpdate?.();
+
+    expect(clearSchedule).toHaveBeenCalledOnce();
+    expect(clearSchedule).toHaveBeenCalledWith(handle);
+    expect(onComplete).toHaveBeenCalledOnce();
+  });
+
   it('stops updates and completion after cancellation', () => {
     vi.useFakeTimers();
     const onTick = vi.fn();

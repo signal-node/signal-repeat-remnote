@@ -197,6 +197,14 @@ describe('RemNote adapter reads', () => {
 });
 
 describe('RemNote adapter registration', () => {
+  it('closes the popup and requests focus restoration', async () => {
+    const sdk = createSdk();
+
+    await createRemNoteAdapterFromSdk(sdk).closeRepeatPopup();
+
+    expect(sdk.widget.closePopup).toHaveBeenCalledWith(true);
+  });
+
   it('registers the selected-text widget through the SDK boundary', async () => {
     const sdk = createSdk();
 
