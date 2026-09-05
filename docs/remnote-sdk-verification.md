@@ -71,6 +71,24 @@ The focused-target fallback was checked in RemNote Web on 2026-09-05 for issue
 | Rendering safety | Focused RichText is converted with the SDK's `richText.toString()` and rendered as React text; the focused-target render test confirms HTML-like input is escaped rather than inserted as markup. |
 | Cleanup and privacy | Escape restored focus after each popup, the temporary document was moved to Trash, and the plugin did not mutate, persist, log, or transmit Rem content. |
 
+## Web flashcard-answer verification
+
+The product flashcard widget was checked in RemNote Web on 2026-09-05 for
+issue #22. No card was rated, edited, or advanced by Signal Repeat, and answer
+content was not copied into logs or documentation.
+
+| Check | Result |
+| --- | --- |
+| Before reveal | The `FlashcardAnswer` iframe was mounted without a Repeat action while the answer remained hidden. |
+| Default label | Revealing the answer displayed the keyboard-accessible **Repeat · 15s** action. |
+| Reverse card | The action displayed the reverse card's question-side RichText as the answer target, matching the revealed content. |
+| Forward card | The action displayed the forward card's back-side RichText as the answer target, matching the revealed content. |
+| Settings | Changing Repeat duration to 30 seconds updated the action to **Repeat · 30s**; the setting was restored to 15 seconds after verification. |
+| Session return | Escape closed the popup onto the same revealed card, with all RemNote rating buttons still available. |
+| Theme and focus | The action retained readable contrast in RemNote's light theme and exposed a descriptive focusable button label. |
+| Unsupported cards | Missing card IDs, empty answers, and Cloze cards resolve to no target in focused tests; Cloze answer extraction remains outside the MVP. |
+| Privacy and mutation | Source inspection found no logging, storage, or network path for answer content. Signal Repeat called no rating, scheduling, queue-advance, or Rem-write API. |
+
 ### Focused Rem
 
 Use `editor.getFocusedEditorText()` first because it reflects the active editor.
@@ -115,8 +133,8 @@ placeholder or real learning text into this document or DevTools.
 | Settings contract | Register a dropdown and two booleans in the harness activation path. | The 0.0.46 methods accept the specification's setting shapes. | Passed by strict typecheck and successful plugin activation; product settings are implemented in issue #15. |
 | Flashcard placement | Reveal a card in the queue. | The action is absent before reveal and available after reveal. | Passed: `FlashcardAnswer`, `FlashcardExtraDetail`, and `FlashcardUnder` rendered after reveal when context was refreshed on `RevealAnswer`. Use `FlashcardAnswer` for the MVP. |
 | Flashcard context | Read the answer widget context after reveal. | `revealed` gates the action; `remId` and optional `cardId` follow the SDK contract. | `revealed` was verified on Desktop. The 0.0.46 contract makes `remId` required and `cardId` optional; absence of `cardId` must be handled without guessing. |
-| Forward card | Resolve a forward card through `cardId`. | Use the owning Rem's non-empty `backText`. | Decision verified against SDK card and Rem contracts; product implementation belongs to issue #22. |
-| Reverse card | Resolve a reverse card through `cardId`. | Use the owning Rem's non-empty `text`. | Decision verified against SDK card and Rem contracts; product implementation belongs to issue #22. |
+| Forward card | Resolve a forward card through `cardId`. | Use the owning Rem's non-empty `backText`. | Implemented and verified in RemNote Web for issue #22. |
+| Reverse card | Resolve a reverse card through `cardId`. | Use the owning Rem's non-empty `text`. | Implemented and verified in RemNote Web for issue #22. |
 | Cloze card | Resolve a Cloze card through `cardId`. | Do not guess the rendered answer segment. | Declared out of scope for the MVP; defer to the v0.4 Cloze-aware roadmap item. |
 | No mutation | Compare the placeholder Rem and queue state before and after all checks. | Text, rating, scheduling, and queue position are unchanged by the harness. | Passed. One deliberate placeholder edit used to verify focus restoration was immediately undone. |
 | No content logs | Inspect harness source and terminal output. | No selected text, Rem text, or flashcard answer appears in logs. | Passed: only fixed status messages and boolean/count metadata were emitted. |
@@ -127,8 +145,8 @@ placeholder or real learning text into this document or DevTools.
   introduces that boundary.
 - Resolve selected text immediately in the command action. Do not depend on the
   Selected Text Menu, which did not render on the tested Desktop version.
-- Refresh flashcard widget context on `QueueEvent.RevealAnswer`; a one-time
-  context read remains stale when an already-mounted widget reveals its answer.
+- Refresh flashcard widget context when the queue loads a card or reveals its
+  answer; a one-time context read remains stale across those transitions.
 - Register the MVP action only at `WidgetLocation.FlashcardAnswer`; the other
   working placements would duplicate the control.
 - Treat a missing `cardId` and Cloze card as unsupported instead of guessing.

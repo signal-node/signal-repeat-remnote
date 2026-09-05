@@ -6,6 +6,61 @@ body {
   background: transparent;
 }
 
+.signal-repeat-flashcard-action {
+  box-sizing: border-box;
+  display: inline-flex;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.9rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  color: #075985;
+  font: inherit;
+  font-weight: 650;
+  line-height: 1.25;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid #0284c7;
+  border-radius: 0.55rem;
+  cursor: pointer;
+}
+
+:host .signal-repeat-flashcard-action,
+body > .signal-repeat-flashcard-action {
+  width: 100%;
+}
+
+.signal-repeat-flashcard-action:hover {
+  background: rgba(14, 165, 233, 0.24);
+}
+
+.signal-repeat-flashcard-action:focus-visible {
+  outline: 3px solid #7dd3fc;
+  outline-offset: 2px;
+}
+
+.signal-repeat-flashcard-action:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (prefers-color-scheme: dark) {
+  .signal-repeat-flashcard-action {
+    color: #e0f2fe;
+    background: rgba(14, 165, 233, 0.14);
+    border-color: rgba(56, 189, 248, 0.6);
+  }
+}
+
+.signal-repeat-flashcard-preview {
+  box-sizing: border-box;
+  display: grid;
+  min-height: 100vh;
+  padding: 3rem;
+  place-items: center;
+  color: #e5e7eb;
+  background: #202124;
+}
+
 .signal-repeat-selected-action {
   box-sizing: border-box;
   display: inline-flex;
