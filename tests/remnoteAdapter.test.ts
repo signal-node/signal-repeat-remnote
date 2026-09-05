@@ -19,6 +19,9 @@ function createSdk(): RemNoteSdkFacade {
       hasRevealedAnswer: vi.fn(async () => false),
       getCurrentCard: vi.fn(async () => undefined),
     },
+    card: {
+      findOne: vi.fn(async () => undefined),
+    },
     richText: {
       toString: vi.fn(async (richText: RichTextInterface) =>
         richText.filter((value): value is string => typeof value === 'string').join(''),
@@ -28,6 +31,7 @@ function createSdk(): RemNoteSdkFacade {
       registerCommand: vi.fn(async () => undefined),
       registerPopupWidget: vi.fn(async () => undefined),
       registerSelectedTextWidget: vi.fn(async () => undefined),
+      registerFlashcardAnswerWidget: vi.fn(async () => undefined),
       toast: vi.fn(async () => undefined),
     },
     settings: {
@@ -35,9 +39,17 @@ function createSdk(): RemNoteSdkFacade {
       registerBooleanSetting: vi.fn(async () => undefined),
       registerDropdownSetting: vi.fn(async () => undefined),
     },
+    events: {
+      subscribeFlashcardAnswerChanges: vi.fn(() => vi.fn()),
+    },
     widget: {
       closePopup: vi.fn(async () => undefined),
       getPopupContext: vi.fn(async () => ({ contextData: undefined })),
+      getFlashcardAnswerContext: vi.fn(async () => ({
+        remId: 'rem-id',
+        cardId: 'card-id',
+        revealed: true,
+      })),
       openPopup: vi.fn(async () => undefined),
     },
   };
@@ -73,6 +85,34 @@ describe('RemNote adapter reads', () => {
 
     await expect(createRemNoteAdapterFromSdk(sdk).getFlashcardAnswer()).resolves.toBeNull();
     expect(sdk.queue.getCurrentCard).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['forward', 'answer'] as const,
+    ['backward', 'question'] as const,
+  ])('resolves a %s card answer by card ID', async (type, expected) => {
+    const sdk = createSdk();
+    vi.mocked(sdk.card.findOne).mockResolvedValue({
+      type,
+      getRem: async () => ({ text: text('question'), backText: text('answer') }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswerByCardId('card-id'),
+    ).resolves.toBe(expected);
+    expect(sdk.card.findOne).toHaveBeenCalledWith('card-id');
+  });
+
+  it('does not guess the answer for a Cloze card', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.card.findOne).mockResolvedValue({
+      type: { clozeId: 'cloze-id' },
+      getRem: async () => ({ text: text('whole Rem') }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswerByCardId('card-id'),
+    ).resolves.toBeNull();
   });
 
   it('returns typed, content-free API errors', async () => {
@@ -165,5 +205,33 @@ describe('RemNote adapter registration', () => {
     expect(sdk.app.registerSelectedTextWidget).toHaveBeenCalledWith(
       'selectedText',
     );
+  });
+
+  it('registers the flashcard-answer widget through the SDK boundary', async () => {
+    const sdk = createSdk();
+
+    await createRemNoteAdapterFromSdk(sdk).registerFlashcardAnswerWidget();
+
+    expect(sdk.app.registerFlashcardAnswerWidget).toHaveBeenCalledWith(
+      'flashcardAnswer',
+    );
+  });
+
+  it('subscribes and cleans up flashcard refresh events through the SDK boundary', () => {
+    const sdk = createSdk();
+    const cleanup = vi.fn();
+    vi.mocked(sdk.events.subscribeFlashcardAnswerChanges).mockReturnValue(
+      cleanup,
+    );
+    const listener = vi.fn();
+
+    const unsubscribe =
+      createRemNoteAdapterFromSdk(sdk).subscribeFlashcardAnswerChanges(listener);
+
+    expect(sdk.events.subscribeFlashcardAnswerChanges).toHaveBeenCalledWith(
+      listener,
+    );
+    unsubscribe();
+    expect(cleanup).toHaveBeenCalledOnce();
   });
 });

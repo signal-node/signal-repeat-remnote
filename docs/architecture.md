@@ -11,3 +11,8 @@ Signal Repeat follows the module boundaries defined in
 
 The official RemNote React plugin template build discovers TypeScript React
 entry points under `src/widgets/`.
+
+The flashcard integration keeps `RepeatButton` presentational, resolves only a
+revealed and identified card in `services/flashcardAnswer.ts`, and keeps widget
+context, card lookup, queue events, and settings reads behind
+`services/remnoteAdapter.ts`.
