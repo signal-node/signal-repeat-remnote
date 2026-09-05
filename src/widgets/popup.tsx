@@ -1,11 +1,11 @@
 import {
   renderWidget,
   usePlugin,
-  WidgetLocation,
 } from '@remnote/plugin-sdk';
 import ReactDOM from 'react-dom';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RepeatSessionModal } from '../components/RepeatSessionModal';
+import { createRemNoteAdapter } from '../services/remnoteAdapter';
 import { parseRepeatPopupContext } from '../services/repeatPopupContext';
 import type {
   RepeatPopupContextData,
@@ -28,6 +28,7 @@ const LONG_PREVIEW_TEXT = Array.from(
 
 function PopupWidget(): JSX.Element | null {
   const plugin = usePlugin();
+  const adapter = useMemo(() => createRemNoteAdapter(plugin), [plugin]);
   const [context, setContext] = useState<RepeatPopupContextData | null>();
   const closingRef = useRef(false);
 
@@ -38,19 +39,19 @@ function PopupWidget(): JSX.Element | null {
       }
 
       closingRef.current = true;
-      void plugin.widget.closePopup(true);
+      void adapter.closeRepeatPopup();
     },
-    [plugin],
+    [adapter],
   );
 
   useEffect(() => {
     let active = true;
 
-    void plugin.widget
-      .getWidgetContext<WidgetLocation.Popup>()
-      .then((widgetContext) => {
+    void adapter
+      .getPopupContextData()
+      .then((contextData) => {
         if (active) {
-          setContext(parseRepeatPopupContext(widgetContext.contextData));
+          setContext(parseRepeatPopupContext(contextData));
         }
       })
       .catch(() => {
@@ -62,7 +63,7 @@ function PopupWidget(): JSX.Element | null {
     return () => {
       active = false;
     };
-  }, [plugin]);
+  }, [adapter]);
 
   useEffect(() => {
     if (context === null) {

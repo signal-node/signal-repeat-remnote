@@ -1,0 +1,90 @@
+import { describe, expect, it, vi } from 'vitest';
+import type { RichTextInterface } from '@remnote/plugin-sdk';
+import {
+  createRemNoteAdapterFromSdk,
+  RemNoteAdapterError,
+  type RemNoteSdkFacade,
+} from '../src/services/remnoteAdapter';
+
+const text = (value: string): RichTextInterface => [value];
+
+function createSdk(): RemNoteSdkFacade {
+  return {
+    editor: { getSelectedText: vi.fn(async () => undefined) },
+    focus: { getFocusedRem: vi.fn(async () => undefined) },
+    queue: {
+      hasRevealedAnswer: vi.fn(async () => false),
+      getCurrentCard: vi.fn(async () => undefined),
+    },
+    richText: {
+      toString: vi.fn(async (richText: RichTextInterface) =>
+        richText.filter((value): value is string => typeof value === 'string').join(''),
+      ),
+    },
+    app: {
+      registerCommand: vi.fn(async () => undefined),
+      registerPopupWidget: vi.fn(async () => undefined),
+      toast: vi.fn(async () => undefined),
+    },
+    settings: {
+      getSetting: async <T>() => undefined as unknown as T,
+      registerBooleanSetting: vi.fn(async () => undefined),
+      registerDropdownSetting: vi.fn(async () => undefined),
+    },
+    widget: {
+      closePopup: vi.fn(async () => undefined),
+      getPopupContext: vi.fn(async () => ({ contextData: undefined })),
+      openPopup: vi.fn(async () => undefined),
+    },
+  };
+}
+
+describe('RemNote adapter reads', () => {
+  it('converts selected RichText to plain text', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.editor.getSelectedText).mockResolvedValue({
+      richText: text('selected'),
+    });
+
+    await expect(createRemNoteAdapterFromSdk(sdk).getSelectedText()).resolves.toBe(
+      'selected',
+    );
+  });
+
+  it('reads only a revealed forward-card answer', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.queue.hasRevealedAnswer).mockResolvedValue(true);
+    vi.mocked(sdk.queue.getCurrentCard).mockResolvedValue({
+      type: 'forward',
+      getRem: async () => ({ text: text('question'), backText: text('answer') }),
+    });
+
+    await expect(createRemNoteAdapterFromSdk(sdk).getFlashcardAnswer()).resolves.toBe(
+      'answer',
+    );
+  });
+
+  it('returns null without reading a hidden card', async () => {
+    const sdk = createSdk();
+
+    await expect(createRemNoteAdapterFromSdk(sdk).getFlashcardAnswer()).resolves.toBeNull();
+    expect(sdk.queue.getCurrentCard).not.toHaveBeenCalled();
+  });
+
+  it('returns typed, content-free API errors', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.focus.getFocusedRem).mockRejectedValue(
+      new Error('private learning content'),
+    );
+
+    const error = await createRemNoteAdapterFromSdk(sdk)
+      .getFocusedRemText()
+      .catch((cause: unknown) => cause);
+
+    expect(error).toBeInstanceOf(RemNoteAdapterError);
+    expect(error).toMatchObject({
+      info: { operation: 'focused-rem', code: 'api-unavailable' },
+    });
+    expect(String(error)).not.toContain('private learning content');
+  });
+});
