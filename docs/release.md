@@ -3,6 +3,11 @@
 Signal Repeat follows Semantic Versioning. `package.json`, `package-lock.json`,
 and `public/manifest.json` must describe the same release version.
 
+`mise run build` reads the version from `package.json` and writes
+`signal-repeat-remnote-v<version>.zip`. Use
+`mise exec -- npm run --silent archive-name` whenever a script or checklist
+needs the exact current filename.
+
 ## v0.1.0 release candidate
 
 1. Confirm every item in `docs/mvp-acceptance-checklist.md`, then review the
@@ -15,7 +20,9 @@ and `public/manifest.json` must describe the same release version.
    mise run typecheck
    mise run test
    mise run build
-   test -s PluginZip.zip
+   archive_name="$(mise exec -- npm run --silent archive-name)"
+   test -s "$archive_name"
+   unzip -t "$archive_name"
    ```
 
 3. Load the candidate in RemNote and complete the browser smoke checklist with
@@ -33,8 +40,7 @@ and `public/manifest.json` must describe the same release version.
 
 7. Create GitHub Release **Signal Repeat v0.1.0** from that tag. Use
    `docs/release-notes-v0.1.0.md` as the notes and attach the exact
-   `PluginZip.zip` produced from the tagged commit under the public asset name
-   `signal-repeat-remnote-v0.1.0.zip`.
+   versioned ZIP produced from the tagged commit.
 8. Download the attached archive, verify it is non-empty, and perform one final
    installation smoke test before publishing the plugin listing.
 
@@ -49,13 +55,13 @@ fix it on a new branch and publish a patch version.
    `public/manifest.json`.
 3. From a clean checkout, repeat the setup, typecheck, test, build, and ZIP
    integrity checks above.
-4. Confirm `logo.svg` exists at the root of `PluginZip.zip` and visually verify
+4. Confirm `logo.svg` exists at the root of the versioned ZIP and visually verify
    the logo at small sizes on light and dark backgrounds.
 5. Install the candidate ZIP in RemNote and repeat the synthetic-content Web and
    Desktop smoke tests.
 6. Confirm CI on the release Pull Request and again after merge to `main`.
 7. Create annotated tag `v0.1.1` from the verified `main` commit and publish the
    GitHub Release using `docs/release-notes-v0.1.1.md`.
-8. Attach the verified build as `signal-repeat-remnote-v0.1.1.zip`, download it
+8. Attach the generated `signal-repeat-remnote-v0.1.1.zip`, download it
    again, compare checksums, and install that downloaded asset before submitting
    the RemNote public listing.

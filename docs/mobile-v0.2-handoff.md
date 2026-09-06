@@ -20,7 +20,7 @@ privacy, safety, accessibility, or non-invasive behavior.
 - RemNote Plugin SDK at the baseline: `0.0.46`
 - `public/manifest.json` currently has `"enableOnMobile": false`
 - Web/Desktop baseline verification: TypeScript passed, all 82 tests passed,
-  the plugin build passed, and the generated `PluginZip.zip` was valid.
+  the plugin build passed, and the generated versioned ZIP was valid.
 
 Mobile support was intentionally outside the v0.1.0 MVP. Do not treat the
 manifest flag alone as proof that the plugin works on mobile.

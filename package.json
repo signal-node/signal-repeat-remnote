@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "dev": "cross-env NODE_ENV=development webpack-dev-server --color --progress --no-open",
-    "build": "npx remnote-plugin validate && shx rm -rf dist && cross-env NODE_ENV=production webpack --color --progress && cd dist && bestzip ../PluginZip.zip ./*"
+    "archive-name": "node scripts/package-plugin.cjs --print-name",
+    "build": "npx remnote-plugin validate && shx rm -rf dist && cross-env NODE_ENV=production webpack --color --progress && node scripts/package-plugin.cjs"
   },
   "dependencies": {
     "@remnote/plugin-sdk": "0.0.46",
