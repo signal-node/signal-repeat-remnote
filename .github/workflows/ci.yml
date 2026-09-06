@@ -42,4 +42,7 @@ jobs:
         run: mise run build
 
       - name: Verify plugin package
-        run: test -s PluginZip.zip
+        run: |
+          archive_name="$(npm run --silent archive-name)"
+          test -s "$archive_name"
+          unzip -t "$archive_name"

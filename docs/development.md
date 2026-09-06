@@ -30,7 +30,9 @@ Before submitting a change, run:
 mise run typecheck
 mise run test
 mise run build
-test -s PluginZip.zip
+archive_name="$(mise exec -- npm run --silent archive-name)"
+test -s "$archive_name"
+unzip -t "$archive_name"
 ```
 
 Vitest runs in a Node environment. Tests belong under `tests/` and use the
@@ -39,8 +41,9 @@ Vitest runs in a Node environment. Tests belong under `tests/` and use the
 
 GitHub Actions runs on every pull request and push to `main`. It installs Mise,
 uses the lockfile-backed setup task, then runs typecheck, test, build, and a
-non-empty `PluginZip.zip` check in order. No CI secret or RemNote user data is
-required.
+non-empty, valid versioned ZIP check in order. The archive name is generated
+from `package.json` as `signal-repeat-remnote-v<version>.zip`. No CI secret or
+RemNote user data is required.
 
 The acceptance mapping and browser checklist are in
 [`mvp-acceptance-checklist.md`](mvp-acceptance-checklist.md). Detailed SDK and

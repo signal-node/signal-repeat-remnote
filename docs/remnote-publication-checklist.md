@@ -116,7 +116,8 @@ Acceptance checks:
 
 ```sh
 mise run build
-unzip -l PluginZip.zip | grep 'logo.svg'
+archive_name="$(mise exec -- npm run --silent archive-name)"
+unzip -l "$archive_name" | grep 'logo.svg'
 ```
 
 Also load the built ZIP in RemNote and confirm that the icon is visible in the
