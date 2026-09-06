@@ -3,7 +3,7 @@ const glob = require('glob');
 const path = require('path');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const { ESBuildMinifyPlugin } = require('esbuild-loader');
+const { EsbuildPlugin } = require('esbuild-loader');
 const { ProvidePlugin, BannerPlugin } = require('webpack');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
@@ -103,7 +103,7 @@ const config = {
 if (isProd) {
   config.optimization = {
     minimize: true,
-    minimizer: [new ESBuildMinifyPlugin()],
+    minimizer: [new EsbuildPlugin({ minify: true })],
   };
 } else {
   config.devServer = {
