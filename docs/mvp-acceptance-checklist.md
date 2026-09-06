@@ -3,7 +3,7 @@
 This checklist maps the product acceptance criteria in
 `Signal-Repeat-SPECIFICATION.md` to automated and manual evidence. Manual checks
 use placeholder content only. Signal Repeat must not copy learning content into
-test output, logs, documentation, storage, or network requests.
+test output, logs, documentation, storage, or plugin-owned network requests.
 
 ## Acceptance-criteria mapping
 
@@ -16,6 +16,8 @@ test output, logs, documentation, storage, or network requests.
 | AC-05 Flashcard | `flashcardAnswer.test.tsx` and `remnoteAdapter.test.ts` verify revealed gating, exact card ID, forward/reverse direction, and unsupported-card safety. | RemNote Web issue #22 check: the revealed forward and reverse answers started Signal Repeat and the rating controls remained available afterward. |
 | AC-06 Settings | `settingsService.test.ts` verifies 30 seconds and all supported/invalid setting boundaries. `startRepeat.test.ts` verifies the active duration reaches the popup. | RemNote Web issue #23 regression: the action showed **Repeat · 30s**, the popup was absent at the approximately 33-second observation, and the same revealed card and rating controls remained. The observation includes browser automation latency. The setting was restored to 15 seconds afterward. |
 | AC-07 Target missing | `startRepeat.test.ts` verifies a fixed notification and no popup. `targetResolver.test.ts` verifies empty values and failures at every priority level. | RemNote Web issue #20 check: invoking the command without a target showed the fixed notification and mounted no popup. |
+| AC-08 RichText media | `repeatContent.test.ts`, `repeatMedia.test.tsx`, `popupContext.test.ts`, and `flashcardAnswer.test.tsx` verify supported RichText preservation, audio/video separation, non-autoplay controls, audio-only targets, and exclusion of interactive embeds. | RemNote Desktop synthetic check passed for text + audio, image-only, no URL body text, no audio autoplay, close button, and Escape while audio was actively playing. Video, unsupported-embed host behavior, and network inspection remain pending. |
+| AC-09 Unsupported multi-line card | `remnoteAdapter.test.ts`, `targetResolver.test.ts`, and `startRepeat.test.ts` verify Powerup/card-item detection, fixed notification, no popup, and no focused-Rem fallback. | Pending Set/List/Partial/recursive matrix verification with synthetic cards. |
 
 ## Timer and state-transition coverage
 
@@ -38,8 +40,17 @@ check in RemNote Web using placeholder content:
 - [x] Selected Text opens the popup with only the selected range.
 - [x] The default session closes after approximately 15 seconds.
 - [x] Escape closes immediately and restores focus.
+- [x] Text plus audio renders without exposing the media URL as body text
+      (RemNote Desktop synthetic check).
+- [ ] Audio/video and image-only targets render through their designated safe
+      viewers. Audio and image passed on Desktop; video remains pending.
+- [x] Media does not autoplay and is disposed when the popup closes. Desktop
+      passed close-button behavior and a synthetic active-audio test in which
+      one Escape press removed the popup and playback UI immediately.
 - [x] A revealed forward and reverse flashcard shows the Repeat action; the
       action is absent before reveal.
+- [ ] Multi-line Set/List/Partial/recursive cards show the fixed unsupported
+      notification and never repeat the parent-side fallback text.
 - [x] A 30-second setting produces a 30-second session, then is restored to the
       default.
 - [x] Missing input shows the fixed notification without a popup.

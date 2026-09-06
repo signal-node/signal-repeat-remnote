@@ -1,10 +1,10 @@
-import { useCallback, useEffect } from 'react';
+import { type ReactNode, useCallback, useEffect } from 'react';
 import { useRepeatTimer } from '../hooks/useRepeatTimer';
 import type { RepeatSessionCloseReason } from '../types/repeatSession';
 import { ProgressBar } from './ProgressBar';
 
 export type RepeatSessionModalProps = {
-  targetText: string;
+  targetContent: ReactNode;
   durationMs: number;
   showProgressBar: boolean;
   showCloseHint: boolean;
@@ -16,7 +16,7 @@ export function isRepeatSessionCancelKey(key: string): boolean {
 }
 
 export function RepeatSessionModal({
-  targetText,
+  targetContent,
   durationMs,
   showProgressBar,
   showCloseHint,
@@ -40,8 +40,10 @@ export function RepeatSessionModal({
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    // Capture Escape so cancellation remains reliable while a media action or
+    // another control inside the popup owns keyboard focus.
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [handleCancel]);
 
   return (
@@ -57,7 +59,7 @@ export function RepeatSessionModal({
       </button>
 
       <div className="signal-repeat-session__content">
-        <p className="signal-repeat-session__target">{targetText}</p>
+        <div className="signal-repeat-session__target">{targetContent}</div>
       </div>
 
       <footer className="signal-repeat-session__footer">

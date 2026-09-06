@@ -19,9 +19,9 @@ type CommandAdapter = Pick<
 
 function createAdapter(): CommandAdapter {
   return {
-    getSelectedText: vi.fn(async () => 'selected text'),
-    getFlashcardAnswer: vi.fn(async () => 'answer'),
-    getFocusedRemText: vi.fn(async () => 'focused text'),
+    getSelectedText: vi.fn(async () => ['selected text']),
+    getFlashcardAnswer: vi.fn(async () => ['answer']),
+    getFocusedRemText: vi.fn(async () => ['focused text']),
     getRepeatSettings: vi.fn(async () => ({
       duration: 15 as const,
       showProgressBar: true,
@@ -53,7 +53,7 @@ describe('repeat command', () => {
     await command.action();
 
     expect(adapter.openRepeatPopup).toHaveBeenCalledWith({
-      targetText: 'selected text',
+      targetRichText: ['selected text'],
       durationSeconds: 15,
       showProgressBar: true,
       showCloseHint: true,
@@ -77,7 +77,7 @@ describe('repeat command', () => {
 
   it('ignores a concurrent invocation while target resolution is in progress', async () => {
     const adapter = createAdapter();
-    let resolveSelection: ((text: string) => void) | undefined;
+    let resolveSelection: ((text: string[]) => void) | undefined;
     vi.mocked(adapter.getSelectedText).mockImplementation(
       () => new Promise((resolve) => {
         resolveSelection = resolve;
@@ -89,14 +89,14 @@ describe('repeat command', () => {
     const secondRun = command.action();
     expect(adapter.getSelectedText).toHaveBeenCalledTimes(1);
 
-    resolveSelection?.('selected text');
+    resolveSelection?.(['selected text']);
     await Promise.all([firstRun, secondRun]);
     expect(adapter.openRepeatPopup).toHaveBeenCalledTimes(1);
   });
 
   it('cancels an in-flight invocation during deactivation', async () => {
     const adapter = createAdapter();
-    let resolveSelection: ((text: string) => void) | undefined;
+    let resolveSelection: ((text: string[]) => void) | undefined;
     vi.mocked(adapter.getSelectedText).mockImplementation(
       () => new Promise((resolve) => {
         resolveSelection = resolve;
@@ -106,7 +106,7 @@ describe('repeat command', () => {
 
     const run = controller.command.action();
     controller.deactivate();
-    resolveSelection?.('selected text');
+    resolveSelection?.(['selected text']);
     await run;
 
     expect(adapter.openRepeatPopup).not.toHaveBeenCalled();

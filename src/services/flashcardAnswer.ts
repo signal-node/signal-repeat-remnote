@@ -3,6 +3,7 @@ import type {
   RemNoteAdapter,
 } from './remnoteAdapter';
 import type { RepeatTarget } from '../types/repeatSession';
+import { prepareRepeatContent } from './repeatContent';
 
 type FlashcardAnswerAdapter = Pick<
   RemNoteAdapter,
@@ -17,6 +18,8 @@ export async function resolveFlashcardAnswerTarget(
     return null;
   }
 
-  const text = (await adapter.getFlashcardAnswerByCardId(context.cardId))?.trim();
-  return text ? { text, source: 'flashcard-answer' } : null;
+  const content = prepareRepeatContent(
+    await adapter.getFlashcardAnswerByCardId(context.cardId),
+  );
+  return content ? { content, source: 'flashcard-answer' } : null;
 }

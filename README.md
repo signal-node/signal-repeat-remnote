@@ -36,6 +36,11 @@ The control is hidden before the answer is revealed. Cloze-answer extraction is
 outside the v0.1.0 scope and safely produces a target-missing notification.
 Signal Repeat never rates the card or changes its schedule.
 
+Multi-line List/Set answers remain disabled until the public SDK can identify
+the exact answer shown for each Set, List, Partial, direction, and recursive
+case. Signal Repeat shows a fixed unsupported-card notification instead of
+guessing from the parent Rem.
+
 ### Keyboard shortcut
 
 Press **Option+M** on macOS or **Alt+M** on Windows/Linux. The command resolves
@@ -44,6 +49,12 @@ Rem. If none is available, RemNote shows a fixed notification and no popup.
 
 Press **Esc** or the close button to end a session early. Otherwise it closes
 automatically when its timer completes and restores focus to RemNote.
+
+Signal Repeat preserves supported RemNote RichText in the focus session,
+including formatting, links, Rem references, LaTeX, audio/video, and images.
+Text, references, LaTeX, and images use RemNote's official read-only RichText
+viewer. Audio/video uses a local, keyboard-accessible play/pause control and is
+never autoplayed by Signal Repeat.
 
 ## Settings
 
@@ -58,7 +69,9 @@ Open **Settings → Plugin Settings → Signal Repeat** to configure:
 Signal Repeat processes learning content only inside the RemNote plugin
 environment. It:
 
-- makes no external network requests;
+- adds no upload, tracking, or media-fetching service of its own;
+- renders only the existing media URL supplied in RemNote RichText and adds no
+  `fetch`/XHR path;
 - does not log or persist selected text, Rem text, or flashcard answers;
 - stores only plugin preferences through RemNote's settings API;
 - requests read-only access and does not modify Rem content, ratings, queues, or

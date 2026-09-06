@@ -234,6 +234,10 @@ Signal Repeat: 反復するテキストを選択してください。
 - 評価ボタンの操作を妨げない
 - Signal Repeat終了後は同じカード画面に戻る
 - Signal Repeat自体はカード評価を変更しない
+- 未検証のマルチラインカードは、親Remの`text`/`backText`から回答を推測しない
+- 正確な回答を解決できないカードではモーダルを開かず、固定の非対応通知を表示する
+- 非対応カードからFocused Remへフォールバックして質問側を表示しない
+- 通常コマンドでも、フォーカス中のRemがマルチラインカード本体または回答項目なら、Focused Editor Textを先に採用せず同じ非対応通知で停止する
 
 ---
 
@@ -276,6 +280,22 @@ Signal Repeat: 反復するテキストを選択してください。
 ```text
 15 seconds
 ```
+
+### Repeat Content
+
+反復対象は単純な文字列ではなく、RemNoteの`RichText`として扱う。
+
+- 通常文字、書式、リンク、Rem参照、LaTeXを保持する
+- 画像はRemNote Plugin SDKの読み取り専用RichText表示を通じて表示する
+- 音声・動画はRichTextから取得した既存メディアURLを、ポップアップ内の
+  キーボード操作可能な再生／一時停止コントロールで表示する
+- 音声・動画を自動再生しない
+- 任意のプラグイン埋め込みや未知の操作可能要素は表示しない
+- 表示可能な文字またはメディアが一つもない場合は、モーダルを開かず通知する
+- メディアURLを本文文字列へ変換して表示しない
+
+対象RichTextは反復セッション中だけメモリ上で保持し、ログまたはストレージへ
+保存しない。
 
 設定可能値：
 
@@ -626,7 +646,12 @@ showCloseHint
 
 ### External Communication
 
-MVPでは外部サーバーへの通信を行わない。
+Signal Repeatはユーザーの学習内容を独自サーバーへ送信しない。
+
+RichText内の画像はRemNote公式SDKの表示処理を使う。音声・動画は、公開SDKから
+受け取った既存URLをブラウザーのメディア要素へ設定する。いずれもRemNoteまたは
+RichText内で指定された保存先から読み込まれることがあるが、Signal Repeatは
+`fetch`/XHR、独自サーバー、追加アップロードを実装しない。
 
 ---
 
@@ -641,6 +666,11 @@ The plugin processes selected text and flashcard content locally within
 the RemNote plugin environment.
 
 The MVP stores only plugin preferences such as the selected timer duration.
+
+Images in RemNote RichText use the official read-only SDK viewer. Audio and
+video use the existing URL supplied by the public SDK in a local accessible
+media control. Signal Repeat adds no fetch/XHR path, upload, tracking, or media
+service of its own.
 ```
 
 ---
@@ -672,6 +702,12 @@ Signal Repeat: 反復するテキストが見つかりません。
 
 ```text
 Signal Repeatを開始できませんでした。
+```
+
+## Unsupported Card
+
+```text
+Signal Repeat: このカード形式にはまだ対応していません。
 ```
 
 内部ではconsoleへ原因を記録してよいが、ユーザーのRem内容をログに出力してはならない。
@@ -806,6 +842,39 @@ Signal Repeatを起動する
 
 Then:
 モーダルを表示せず通知する
+
+---
+
+## AC-08 RichText media
+
+Given:
+反復対象に本文と音声、または音声・画像のみが含まれる
+
+When:
+Signal Repeatを起動する
+
+Then:
+本文へメディアURLを露出せず、画像は公式SDKのRichText表示、音声・動画は
+ポップアップ内のキーボード操作可能な再生／一時停止コントロールで操作できる
+
+And:
+音声・動画は自動再生されない
+
+---
+
+## AC-09 Unsupported multi-line card
+
+Given:
+公開SDKだけでは今回表示された回答項目を正確に特定できないマルチラインカードである
+
+When:
+Signal Repeatを起動する
+
+Then:
+親Remの`text`または`backText`を回答として表示せず、固定の非対応通知を表示する
+
+And:
+Focused Remへフォールバックせず、モーダルを開かない
 
 ---
 

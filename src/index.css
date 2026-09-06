@@ -189,6 +189,66 @@ body > .signal-repeat-selected-action {
   user-select: text;
 }
 
+.signal-repeat-session__target img,
+.signal-repeat-session__target video,
+.signal-repeat-session__target audio {
+  max-width: 100%;
+}
+
+.signal-repeat-session__target audio {
+  width: min(100%, 35rem);
+}
+
+.signal-repeat-rich-text {
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+  width: 100%;
+}
+
+.signal-repeat-session__media {
+  display: block;
+  max-height: min(55vh, 30rem);
+  margin-inline: auto;
+}
+
+.signal-repeat-media {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+}
+
+.signal-repeat-media__toggle {
+  min-width: 7rem;
+  padding: 0.65rem 1.25rem;
+  color: #e0f2fe;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  background: rgba(14, 165, 233, 0.2);
+  border: 1px solid #38bdf8;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.signal-repeat-media__toggle:focus-visible {
+  outline: 3px solid #7dd3fc;
+  outline-offset: 3px;
+}
+
+.signal-repeat-media__toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.signal-repeat-media__error {
+  margin: 0;
+  color: #fecaca;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
 .signal-repeat-session__footer {
   width: min(100%, 40rem);
   margin: clamp(1.5rem, 5vh, 3rem) auto 0;

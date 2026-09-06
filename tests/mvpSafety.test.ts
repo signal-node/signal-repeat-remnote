@@ -26,6 +26,7 @@ describe('MVP privacy and non-mutation boundary', () => {
     expect(source).not.toMatch(/\bconsole\s*\./);
     expect(source).not.toMatch(/\b(?:localStorage|sessionStorage|indexedDB)\b/);
     expect(source).not.toMatch(/\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(?/);
+    expect(source).not.toMatch(/richText\.toString\s*\(/);
   });
 
   it('contains no Rem, card-rating, scheduling, or queue mutation call', () => {

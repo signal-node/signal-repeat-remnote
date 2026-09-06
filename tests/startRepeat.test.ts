@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { RemNoteAdapter } from '../src/services/remnoteAdapter';
+import {
+  UnsupportedFlashcardError,
+  type RemNoteAdapter,
+} from '../src/services/remnoteAdapter';
 import {
   START_FAILED_MESSAGE,
   startRepeat,
   TARGET_MISSING_MESSAGE,
+  UNSUPPORTED_CARD_MESSAGE,
 } from '../src/services/startRepeat';
 import { resolveSelectedTextTarget } from '../src/services/targetResolver';
 
@@ -19,7 +23,7 @@ type StartAdapter = Pick<
 
 function createAdapter(): StartAdapter {
   return {
-    getSelectedText: vi.fn(async () => 'selected text'),
+    getSelectedText: vi.fn(async () => ['selected text']),
     getFlashcardAnswer: vi.fn(async () => null),
     getFocusedRemText: vi.fn(async () => null),
     getRepeatSettings: vi.fn(async () => ({
@@ -40,7 +44,7 @@ describe('startRepeat', () => {
       startRepeat(adapter, () => resolveSelectedTextTarget(adapter)),
     ).resolves.toBe('started');
     expect(adapter.openRepeatPopup).toHaveBeenCalledWith({
-      targetText: 'selected text',
+      targetRichText: ['selected text'],
       durationSeconds: 15,
       showProgressBar: true,
       showCloseHint: false,
@@ -75,6 +79,18 @@ describe('startRepeat', () => {
     expect(adapter.openRepeatPopup).not.toHaveBeenCalled();
   });
 
+  it('shows a fixed unsupported-card notification without opening a popup', async () => {
+    const adapter = createAdapter();
+
+    await expect(
+      startRepeat(adapter, async () => {
+        throw new UnsupportedFlashcardError();
+      }),
+    ).resolves.toBe('unsupported-card');
+    expect(adapter.showToast).toHaveBeenCalledWith(UNSUPPORTED_CARD_MESSAGE);
+    expect(adapter.openRepeatPopup).not.toHaveBeenCalled();
+  });
+
   it('prevents a rejected toast from escaping the failure boundary', async () => {
     const adapter = createAdapter();
     vi.mocked(adapter.showToast).mockRejectedValue(new Error('toast failed'));
@@ -93,7 +109,7 @@ describe('startRepeat', () => {
         adapter,
         async () => {
           active = false;
-          return { text: 'selected text', source: 'selected-text' };
+          return { content: ['selected text'], source: 'selected-text' };
         },
         () => active,
       ),

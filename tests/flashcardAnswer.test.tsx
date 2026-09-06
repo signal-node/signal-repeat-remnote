@@ -17,7 +17,7 @@ describe('flashcard answer integration', () => {
 
   it('resolves a revealed card by its exact card ID', async () => {
     const adapter = {
-      getFlashcardAnswerByCardId: vi.fn(async () => '  answer  '),
+      getFlashcardAnswerByCardId: vi.fn(async () => ['answer']),
     };
 
     await expect(
@@ -26,7 +26,7 @@ describe('flashcard answer integration', () => {
         cardId: 'card-id',
         revealed: true,
       }),
-    ).resolves.toEqual({ text: 'answer', source: 'flashcard-answer' });
+    ).resolves.toEqual({ content: ['answer'], source: 'flashcard-answer' });
     expect(adapter.getFlashcardAnswerByCardId).toHaveBeenCalledWith('card-id');
   });
 
@@ -35,7 +35,7 @@ describe('flashcard answer integration', () => {
     { remId: 'rem-id', revealed: true },
   ])('does not read a hidden or unidentified card', async (context) => {
     const adapter = {
-      getFlashcardAnswerByCardId: vi.fn(async () => 'answer'),
+      getFlashcardAnswerByCardId: vi.fn(async () => ['answer']),
     };
 
     await expect(
@@ -46,7 +46,7 @@ describe('flashcard answer integration', () => {
 
   it('treats an empty or unsupported answer as no target', async () => {
     const adapter = {
-      getFlashcardAnswerByCardId: vi.fn(async () => '  '),
+      getFlashcardAnswerByCardId: vi.fn(async () => ['  ']),
     };
 
     await expect(
@@ -56,5 +56,20 @@ describe('flashcard answer integration', () => {
         revealed: true,
       }),
     ).resolves.toBeNull();
+  });
+
+  it('accepts an audio-only answer as a repeat target', async () => {
+    const audio = { i: 'a' as const, url: 'https://example.invalid/audio.mp3' };
+    const adapter = {
+      getFlashcardAnswerByCardId: vi.fn(async () => [audio]),
+    };
+
+    await expect(
+      resolveFlashcardAnswerTarget(adapter, {
+        remId: 'rem-id',
+        cardId: 'card-id',
+        revealed: true,
+      }),
+    ).resolves.toEqual({ content: [audio], source: 'flashcard-answer' });
   });
 });

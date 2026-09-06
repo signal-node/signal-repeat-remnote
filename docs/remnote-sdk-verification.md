@@ -68,7 +68,7 @@ The focused-target fallback was checked in RemNote Web on 2026-09-05 for issue
 | Focused Rem fallback | Opening the placeholder Rem as a document and invoking Option+M outside its text editor displayed the same complete Rem text. |
 | Selection priority | Selecting only `editor` inside the placeholder Rem displayed exactly `editor`, confirming that selected text remains higher priority. |
 | Empty Rem | Invoking Option+M from a focused empty Rem showed the fixed target-missing toast and did not mount a popup. |
-| Rendering safety | Focused RichText is converted with the SDK's `richText.toString()` and rendered as React text; the focused-target render test confirms HTML-like input is escaped rather than inserted as markup. |
+| Rendering safety | The original v0.1.1 check converted focused RichText with `richText.toString()`. The current implementation validates supported RichText, delegates text/references/LaTeX/images to the official read-only `RichText` component, and renders audio/video with popup-local controls; media results are recorded below. |
 | Cleanup and privacy | Escape restored focus after each popup, the temporary document was moved to Trash, and the plugin did not mutate, persist, log, or transmit Rem content. |
 
 ## Web flashcard-answer verification
@@ -89,6 +89,50 @@ content was not copied into logs or documentation.
 | Unsupported cards | Missing card IDs, empty answers, and Cloze cards resolve to no target in focused tests; Cloze answer extraction remains outside the MVP. |
 | Privacy and mutation | Source inspection found no logging, storage, or network path for answer content. Signal Repeat called no rating, scheduling, queue-advance, or Rem-write API. |
 
+## RichText media verification
+
+Use synthetic content only. Do not record media URLs, Rem IDs, or content in
+logs or committed documentation.
+
+| Check | Expected result | Status |
+| --- | --- | --- |
+| Text and audio | Text and an audio control render; the media URL does not appear as body text. | **Passed on RemNote Desktop with synthetic text, image, and audio.** The text and controls rendered, while the media URL was absent from visible body text. |
+| Audio/video only | The repeat popup opens with usable media controls and no autoplay. | **Audio passed on RemNote Desktop.** The audio control opened in a stopped state and changed to an accessible pause action only after activation. Video remains pending. |
+| Image only | The image remains within the popup and long content can scroll. | **Passed on RemNote Desktop** with the repository's synthetic session screenshot. |
+| Unsupported embed | Interactive plugin embeds are excluded; an unsupported-only target opens no popup. | Covered by unit tests; pending host check. |
+| Cleanup | Closing by Escape, button, or timer disposes the viewer and stops active playback. | **Passed for active audio on RemNote Desktop.** After playback changed the action to pause, one Escape press immediately removed the popup and playback UI and restored the source Rem. Close button passed separately; timer disposal is covered by automated tests. |
+| Network boundary | Signal Repeat makes no direct `fetch`/XHR; the viewer uses only the existing URL supplied by RichText. | Covered by source test; pending browser network inspection. |
+
+The Desktop media check used only an approved repository image and the macOS
+standard `Glass.aiff` sound in a temporary synthetic RemNote document. No media
+URL, Rem ID, or learning content was copied into logs or this document. The
+image viewer exposed the underlying source to the accessibility tree as a
+resource path, but did not render it as body text; this is distinct from the
+original URL-leak defect. A later MP3 fixture was used to verify active playback
+and Escape cleanup without recording its URL or Rem ID.
+
+## Multi-line safety verification
+
+The current safety gate treats a card as multi-line when its owning Rem has the
+public `MultiLineCard` Powerup or a direct child reports `isCardItem()`. Until
+the rendered item can be identified exactly, the adapter raises a content-free
+unsupported-card result and target resolution must not fall back to the focused
+Rem.
+
+| Card shape | Expected result | Status |
+| --- | --- | --- |
+| Forward Set/List | Fixed unsupported notification; no popup. | Covered by unit tests; pending host check. |
+| Backward Set/List | Fixed unsupported notification; no popup. | Pending host check. |
+| Partial Set/List | Fixed unsupported notification; no popup. | Pending host check. |
+| Recursive Set/List | Fixed unsupported notification; no popup. | Pending host check. |
+
+An attempted Desktop fixture was not accepted as host evidence because editor
+focus could not be placed deterministically on the intended synthetic parent.
+No conclusion was inferred from that ambiguous UI state. The safety behavior
+remains covered at the public SDK boundary, including focused parent Powerup,
+focused card item, direct child card item, no fallback after an unsupported
+result, and fail-closed behavior when card-shape inspection fails.
+
 ## Web MVP regression verification
 
 The completed MVP was regression-checked in RemNote Web on 2026-09-05 for
@@ -104,9 +148,12 @@ not copied into this document, logs, storage, or network requests.
 
 ### Focused Rem
 
-Use `editor.getFocusedEditorText()` first because it reflects the active editor.
-If it is missing or empty, call `focus.getFocusedRem()` and use `rem.text`.
-Neither call modifies Rem content.
+Inspect `focus.getFocusedRem()` first so a multi-line card parent or item is
+rejected before any editor text is accepted. For a supported Rem, prefer the
+non-empty value from `editor.getFocusedEditorText()` and otherwise use
+`rem.text`. If the focus API itself is unavailable, editor text remains a
+compatibility fallback; if the Rem is available but its card shape cannot be
+checked, fail closed. None of these calls modifies Rem content.
 
 ### Flashcard Answer
 

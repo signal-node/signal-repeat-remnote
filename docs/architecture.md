@@ -8,7 +8,7 @@ Signal Repeat follows the module boundaries and privacy constraints in
 1. `src/widgets/index.tsx` registers settings, the command, the selected-text
    entry point, and the flashcard-answer entry point.
 2. `src/services/targetResolver.ts` resolves selected text, a revealed
-   flashcard answer, or the focused Rem in strict priority order.
+   flashcard answer, or the focused Rem as RichText in strict priority order.
 3. `src/services/startRepeat.ts` reads the current duration and opens the popup
    with typed, transient context.
 4. `src/widgets/popup.tsx` validates that context and renders
@@ -22,6 +22,7 @@ Signal Repeat follows the module boundaries and privacy constraints in
 - `src/components/`: presentational controls, modal, and progress bar
 - `src/hooks/`: elapsed-time timer behavior and React cleanup
 - `src/services/remnoteAdapter.ts`: the only RemNote Plugin SDK boundary
+- `src/services/repeatContent.ts`: supported RichText validation and filtering
 - `src/services/targetResolver.ts`: target priority and content-free failures
 - `src/services/settingsService.ts`: supported settings and safe defaults
 - `src/services/startRepeat.ts`: repeat-session orchestration
@@ -35,7 +36,11 @@ does not guess at Cloze content or missing card IDs.
 
 ## Safety properties
 
-Learning content is held only in memory for the active session and rendered as
-ordinary React text. There is no logging, browser storage, external network, Rem
+Learning content is held only in memory for the active session. Text,
+references, LaTeX, and images are rendered with the official read-only SDK
+viewer. Audio/video elements are split from the RichText and use the existing
+URL in a popup-local play/pause control; this keeps keyboard focus and Escape
+handling inside the popup. Signal Repeat adds no `fetch`/XHR, upload, tracking,
+or media service. There is no learning-content logging, browser storage, Rem
 write, card-rating, queue, or scheduling path. The plugin manifest requests
 read-only access, and regression tests enforce these boundaries.

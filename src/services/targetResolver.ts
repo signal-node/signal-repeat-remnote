@@ -3,7 +3,9 @@ import {
   type RemNoteAdapter,
   type RemNoteAdapterErrorInfo,
 } from './remnoteAdapter';
+import { prepareRepeatContent } from './repeatContent';
 import type { RepeatTarget, RepeatTargetSource } from '../types/repeatSession';
+import type { RichTextInterface } from '@remnote/plugin-sdk';
 
 export class TargetResolutionError extends Error {
   readonly info: RemNoteAdapterErrorInfo;
@@ -17,13 +19,13 @@ export class TargetResolutionError extends Error {
 
 type TargetReader = {
   source: RepeatTargetSource;
-  read: () => Promise<string | null>;
+  read: () => Promise<RichTextInterface | null>;
 };
 
 async function resolveFromReader(reader: TargetReader): Promise<RepeatTarget | null> {
   try {
-    const text = (await reader.read())?.trim();
-    return text ? { text, source: reader.source } : null;
+    const content = prepareRepeatContent(await reader.read());
+    return content ? { content, source: reader.source } : null;
   } catch (cause) {
     if (cause instanceof RemNoteAdapterError) {
       throw new TargetResolutionError(cause.info);
