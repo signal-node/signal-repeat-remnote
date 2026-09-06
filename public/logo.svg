@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" role="img" aria-labelledby="title desc">
+  <title id="title">Signal Repeat</title>
+  <desc id="desc">A selected signal held inside an open repetition loop.</desc>
+  <rect x="8" y="8" width="64" height="64" rx="16" fill="#171A1D"/>
+  <path d="M55 25.5A22 22 0 1 0 55 54.5" fill="none" stroke="#F4F1EA" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="40" cy="40" r="5" fill="#B7A58D"/>
+</svg>

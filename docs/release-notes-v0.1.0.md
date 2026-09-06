@@ -28,4 +28,5 @@ resolved, Signal Repeat shows a fixed notification and opens no popup.
 ## Installation
 
 Install the published plugin from **Settings → Plugins** in RemNote. The attached
-`PluginZip.zip` is the exact release artifact for verification and distribution.
+`signal-repeat-remnote-v0.1.0.zip` is the exact release artifact for verification
+and distribution.

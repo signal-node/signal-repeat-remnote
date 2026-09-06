@@ -5,6 +5,18 @@ based on Keep a Changelog, and the project follows Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-06
+
+### Added
+
+- Dedicated Signal Repeat logo for RemNote plugin listings and installed-plugin
+  surfaces.
+- RemNote public-listing checklist and mobile v0.2.0 handoff documentation.
+
+### Changed
+
+- Aligned release documentation with versioned distribution archive names.
+
 ## [0.1.0] - 2026-09-05
 
 ### Added
@@ -27,5 +39,6 @@ based on Keep a Changelog, and the project follows Semantic Versioning.
 - Signal Repeat does not write Rem content or alter ratings, queues, or
   scheduling data.
 
-[Unreleased]: https://github.com/signal-node/signal-repeat-remnote/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/signal-node/signal-repeat-remnote/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/signal-node/signal-repeat-remnote/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/signal-node/signal-repeat-remnote/releases/tag/v0.1.0
