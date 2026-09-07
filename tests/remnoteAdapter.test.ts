@@ -23,6 +23,9 @@ function createSdk(): RemNoteSdkFacade {
     card: {
       findOne: vi.fn(async () => undefined),
     },
+    rem: {
+      findOne: vi.fn(async () => undefined),
+    },
     app: {
       registerCommand: vi.fn(async () => undefined),
       registerPopupWidget: vi.fn(async () => undefined),
@@ -76,11 +79,30 @@ describe('RemNote adapter reads', () => {
     );
   });
 
-  it('returns null without reading a hidden card', async () => {
+  it('returns null for a hidden normal card after checking its shape', async () => {
     const sdk = createSdk();
+    vi.mocked(sdk.queue.getCurrentCard).mockResolvedValue({
+      type: 'forward',
+      getRem: async () => ({ text: text('question'), backText: text('answer') }),
+    });
 
     await expect(createRemNoteAdapterFromSdk(sdk).getFlashcardAnswer()).resolves.toBeNull();
-    expect(sdk.queue.getCurrentCard).not.toHaveBeenCalled();
+    expect(sdk.queue.getCurrentCard).toHaveBeenCalledOnce();
+  });
+
+  it('rejects a hidden or item-level multiline card from the keyboard path', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.queue.getCurrentCard).mockResolvedValue({
+      type: 'forward',
+      getRem: async () => ({
+        text: text('question'),
+        hasPowerup: vi.fn(async () => true),
+      }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswer(),
+    ).rejects.toBeInstanceOf(UnsupportedFlashcardError);
   });
 
   it.each([
@@ -147,6 +169,20 @@ describe('RemNote adapter reads', () => {
     await expect(
       createRemNoteAdapterFromSdk(sdk).getFlashcardAnswerByCardId('card-id'),
     ).rejects.toBeInstanceOf(UnsupportedFlashcardError);
+  });
+
+  it('rejects a multiline answer Rem before a card ID is required', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.rem.findOne).mockResolvedValue({
+      text: text('question'),
+      hasPowerup: vi.fn(async () => true),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).assertFlashcardRemSupported('rem-id'),
+    ).rejects.toBeInstanceOf(UnsupportedFlashcardError);
+    expect(sdk.rem.findOne).toHaveBeenCalledWith('rem-id');
+    expect(sdk.card.findOne).not.toHaveBeenCalled();
   });
 
   it('returns typed, content-free API errors', async () => {

@@ -9,7 +9,9 @@ export function RepeatMedia({ media }: RepeatMediaProps): JSX.Element {
   const mediaRef = useRef<HTMLMediaElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasFailed, setHasFailed] = useState(false);
-  const isVideo = media.onlyAudio === false;
+  // RemNote's video editor can omit an explicit `false` value at the SDK
+  // boundary. Audio elements are the positively tagged variant.
+  const isVideo = media.onlyAudio !== true;
   const mediaName = isVideo ? '動画' : '音声';
 
   const stopPlayback = useCallback(() => {

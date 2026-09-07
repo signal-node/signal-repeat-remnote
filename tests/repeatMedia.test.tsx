@@ -39,4 +39,19 @@ describe('RepeatMedia', () => {
     expect(markup).not.toContain('autoplay');
     expect(markup).not.toContain('controls');
   });
+
+  it('treats an untagged RemNote media element as video', () => {
+    const markup = renderToStaticMarkup(
+      <RepeatMedia
+        media={{
+          i: 'a',
+          url: 'https://example.invalid/private-video.mp4',
+        }}
+      />,
+    );
+
+    expect(markup).toContain('<video');
+    expect(markup).toContain('aria-label="動画を再生"');
+    expect(markup).not.toContain('autoplay');
+  });
 });

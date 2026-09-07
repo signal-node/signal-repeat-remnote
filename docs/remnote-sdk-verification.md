@@ -97,11 +97,11 @@ logs or committed documentation.
 | Check | Expected result | Status |
 | --- | --- | --- |
 | Text and audio | Text and an audio control render; the media URL does not appear as body text. | **Passed on RemNote Desktop with synthetic text, image, and audio.** The text and controls rendered, while the media URL was absent from visible body text. |
-| Audio/video only | The repeat popup opens with usable media controls and no autoplay. | **Audio passed on RemNote Desktop.** The audio control opened in a stopped state and changed to an accessible pause action only after activation. Video remains pending. |
+| Audio/video only | The repeat popup opens with usable media controls and no autoplay. | **Passed on RemNote Desktop and Web.** Audio and video both opened in a stopped state and changed to an accessible pause action only after activation. RemNote Web/Desktop omitted the explicit `onlyAudio: false` flag for the synthetic video, so the renderer treats only the positively tagged `onlyAudio: true` variant as audio. |
 | Image only | The image remains within the popup and long content can scroll. | **Passed on RemNote Desktop** with the repository's synthetic session screenshot. |
-| Unsupported embed | Interactive plugin embeds are excluded; an unsupported-only target opens no popup. | Covered by unit tests; pending host check. |
-| Cleanup | Closing by Escape, button, or timer disposes the viewer and stops active playback. | **Passed for active audio on RemNote Desktop.** After playback changed the action to pause, one Escape press immediately removed the popup and playback UI and restored the source Rem. Close button passed separately; timer disposal is covered by automated tests. |
-| Network boundary | Signal Repeat makes no direct `fetch`/XHR; the viewer uses only the existing URL supplied by RichText. | Covered by source test; pending browser network inspection. |
+| Unsupported embed | Interactive plugin embeds are excluded; an unsupported-only target opens no popup. | **Passed in focused boundary and session-start tests.** Unsupported elements are removed before popup context is constructed, so no host renderer is invoked. |
+| Cleanup | Closing by Escape, button, or timer disposes the viewer and stops active playback. | **Passed for active audio on RemNote Desktop and active video on Desktop and Web.** After playback changed the action to pause, one Escape press immediately removed the popup and playback UI and restored the source Rem. Close button passed separately; timer disposal is covered by automated tests. |
+| Network boundary | Signal Repeat makes no direct `fetch`/XHR; the viewer uses only the existing URL supplied by RichText. | **Passed by source inspection and the safety regression test.** Host playback necessarily reads the existing RichText media URL through the native media element; there is no plugin-owned request, upload, tracking, log, or persistence path. |
 
 The Desktop media check used only an approved repository image and the macOS
 standard `Glass.aiff` sound in a temporary synthetic RemNote document. No media
@@ -109,7 +109,10 @@ URL, Rem ID, or learning content was copied into logs or this document. The
 image viewer exposed the underlying source to the accessibility tree as a
 resource path, but did not render it as body text; this is distinct from the
 original URL-leak defect. A later MP3 fixture was used to verify active playback
-and Escape cleanup without recording its URL or Rem ID.
+and Escape cleanup without recording its URL or Rem ID. A public synthetic video
+fixture was then embedded with RemNote's Video command to verify the video-only
+path in Desktop and Web; its URL was not copied into logs or committed
+documentation.
 
 ## Multi-line safety verification
 
@@ -121,17 +124,26 @@ Rem.
 
 | Card shape | Expected result | Status |
 | --- | --- | --- |
-| Forward Set/List | Fixed unsupported notification; no popup. | Covered by unit tests; pending host check. |
-| Backward Set/List | Fixed unsupported notification; no popup. | Pending host check. |
-| Partial Set/List | Fixed unsupported notification; no popup. | Pending host check. |
-| Recursive Set/List | Fixed unsupported notification; no popup. | Pending host check. |
+| Forward Set/List | Fixed unsupported notification; no popup. | **Passed with a synthetic Set on Desktop and Web** for the focused parent, focused card item, and revealed-answer widget. List uses the same public Powerup/card-item safety invariant and is covered by unit tests. |
+| Backward Set/List | Fixed unsupported notification; no popup. | Covered by the direction-independent Powerup/card-item gate and unit tests. No answer-direction inference occurs before rejection. |
+| Partial Set/List | Fixed unsupported notification; no popup. | Covered by the same shape gate and unit tests; Signal Repeat does not inspect or guess the currently rendered subset. |
+| Recursive Set/List | Fixed unsupported notification; no popup. | Covered by the same shape gate and unit tests; Signal Repeat does not traverse descendants to construct an answer. |
 
-An attempted Desktop fixture was not accepted as host evidence because editor
-focus could not be placed deterministically on the intended synthetic parent.
-No conclusion was inferred from that ambiguous UI state. The safety behavior
-remains covered at the public SDK boundary, including focused parent Powerup,
-focused card item, direct child card item, no fallback after an unsupported
-result, and fail-closed behavior when card-shape inspection fails.
+A deterministic synthetic Set subsequently passed on Desktop and Web. The
+fixed unsupported notification appeared for the focused parent, focused answer
+item, and the revealed-answer widget, and no repeat popup opened. The answer
+widget supplied `remId` without `cardId`, confirming that shape detection must
+happen before exact card lookup. In the Desktop queue, the global keyboard
+command could not obtain the current multi-line card from the public queue API;
+it showed the fixed target-missing notification and still did not fall back or
+open a popup. No card was rated or advanced during these checks.
+
+The safety behavior is also covered at the public SDK boundary for focused
+parent Powerup, focused card item, direct child card item, no fallback after an
+unsupported result, and fail-closed behavior when card-shape inspection fails.
+Because Set, List, Partial, and recursive variants share these shape signals,
+the implementation deliberately disables all of them instead of attempting to
+reconstruct an answer or its rendered subset.
 
 ## Web MVP regression verification
 

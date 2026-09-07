@@ -7,14 +7,21 @@ import { prepareRepeatContent } from './repeatContent';
 
 type FlashcardAnswerAdapter = Pick<
   RemNoteAdapter,
-  'getFlashcardAnswerByCardId'
+  'assertFlashcardRemSupported' | 'getFlashcardAnswerByCardId'
 >;
 
 export async function resolveFlashcardAnswerTarget(
   adapter: FlashcardAnswerAdapter,
   context: FlashcardAnswerContext | null,
 ): Promise<RepeatTarget | null> {
-  if (!context?.revealed || !context.cardId) {
+  if (!context?.revealed) {
+    return null;
+  }
+
+  // remId is safe for shape detection, but never for guessing answer direction.
+  await adapter.assertFlashcardRemSupported(context.remId);
+
+  if (!context.cardId) {
     return null;
   }
 
