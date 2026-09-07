@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   RemNoteAdapterError,
+  UnsupportedFlashcardError,
   type RemNoteAdapter,
 } from '../src/services/remnoteAdapter';
 import {
@@ -8,6 +9,7 @@ import {
   resolveSelectedTextTarget,
   TargetResolutionError,
 } from '../src/services/targetResolver';
+import type { RichTextInterface } from '@remnote/plugin-sdk';
 
 type TargetAdapter = Pick<
   RemNoteAdapter,
@@ -16,9 +18,9 @@ type TargetAdapter = Pick<
 
 function createTargetAdapter(
   values: {
-    selected?: string | null;
-    answer?: string | null;
-    focused?: string | null;
+    selected?: RichTextInterface | null;
+    answer?: RichTextInterface | null;
+    focused?: RichTextInterface | null;
   } = {},
 ): TargetAdapter {
   return {
@@ -31,13 +33,13 @@ function createTargetAdapter(
 describe('resolveRepeatTarget', () => {
   it('uses selected text first and skips later readers', async () => {
     const adapter = createTargetAdapter({
-      selected: '  selected  ',
-      answer: 'answer',
-      focused: 'focused',
+      selected: ['selected'],
+      answer: ['answer'],
+      focused: ['focused'],
     });
 
     await expect(resolveRepeatTarget(adapter)).resolves.toEqual({
-      text: 'selected',
+      content: ['selected'],
       source: 'selected-text',
     });
     expect(adapter.getFlashcardAnswer).not.toHaveBeenCalled();
@@ -45,32 +47,44 @@ describe('resolveRepeatTarget', () => {
   });
 
   it('falls back to a revealed flashcard answer', async () => {
-    const adapter = createTargetAdapter({ answer: 'answer', focused: 'focused' });
+    const adapter = createTargetAdapter({ answer: ['answer'], focused: ['focused'] });
 
     await expect(resolveRepeatTarget(adapter)).resolves.toEqual({
-      text: 'answer',
+      content: ['answer'],
       source: 'flashcard-answer',
     });
     expect(adapter.getFocusedRemText).not.toHaveBeenCalled();
   });
 
   it('falls back to focused Rem text', async () => {
-    const adapter = createTargetAdapter({ focused: 'focused' });
+    const adapter = createTargetAdapter({ focused: ['focused'] });
 
     await expect(resolveRepeatTarget(adapter)).resolves.toEqual({
-      text: 'focused',
+      content: ['focused'],
       source: 'focused-rem',
     });
   });
 
   it('treats empty and whitespace-only values as missing', async () => {
     const adapter = createTargetAdapter({
-      selected: '   ',
-      answer: '',
-      focused: '\n\t',
+      selected: ['   '],
+      answer: [],
+      focused: ['\n\t'],
     });
 
     await expect(resolveRepeatTarget(adapter)).resolves.toBeNull();
+  });
+
+  it('does not fall back to the focused Rem for an unsupported revealed card', async () => {
+    const adapter = createTargetAdapter({ focused: ['question text'] });
+    vi.mocked(adapter.getFlashcardAnswer).mockRejectedValue(
+      new UnsupportedFlashcardError(),
+    );
+
+    await expect(resolveRepeatTarget(adapter)).rejects.toBeInstanceOf(
+      UnsupportedFlashcardError,
+    );
+    expect(adapter.getFocusedRemText).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -110,10 +124,10 @@ describe('resolveRepeatTarget', () => {
 
 describe('resolveSelectedTextTarget', () => {
   it('returns only the selected text target', async () => {
-    const adapter = createTargetAdapter({ selected: '  selection only  ' });
+    const adapter = createTargetAdapter({ selected: ['selection only'] });
 
     await expect(resolveSelectedTextTarget(adapter)).resolves.toEqual({
-      text: 'selection only',
+      content: ['selection only'],
       source: 'selected-text',
     });
     expect(adapter.getFlashcardAnswer).not.toHaveBeenCalled();
@@ -121,7 +135,7 @@ describe('resolveSelectedTextTarget', () => {
   });
 
   it('does not fall back when the selection disappears', async () => {
-    const adapter = createTargetAdapter({ focused: 'focused' });
+    const adapter = createTargetAdapter({ focused: ['focused'] });
 
     await expect(resolveSelectedTextTarget(adapter)).resolves.toBeNull();
     expect(adapter.getFocusedRemText).not.toHaveBeenCalled();

@@ -1,7 +1,9 @@
+import type { RichTextInterface } from '@remnote/plugin-sdk';
+
 export type RepeatTargetSource = 'selected-text' | 'flashcard-answer' | 'focused-rem';
 
 export type RepeatTarget = {
-  text: string;
+  content: RichTextInterface;
   source: RepeatTargetSource;
 };
 
@@ -13,7 +15,7 @@ export type RepeatSessionState =
   | 'cancelled';
 
 export type RepeatPopupContextData = {
-  targetText: string;
+  targetRichText: RichTextInterface;
   durationSeconds: number;
   showProgressBar: boolean;
   showCloseHint: boolean;

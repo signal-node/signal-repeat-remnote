@@ -1,5 +1,6 @@
 import {
   type AppEvent,
+  type BuiltInPowerupCodes,
   type PluginCardType,
   type RichTextInterface,
   type RNPlugin,
@@ -11,6 +12,7 @@ import {
   type RepeatSettings,
   type RepeatSettingsApi,
 } from './settingsService';
+import { prepareRepeatContent } from './repeatContent';
 import type { RepeatPopupContextData } from '../types/repeatSession';
 
 const FLASHCARD_ANSWER_REFRESH_EVENTS: readonly AppEvent[] = [
@@ -18,6 +20,10 @@ const FLASHCARD_ANSWER_REFRESH_EVENTS: readonly AppEvent[] = [
   'queue.reveal-answer',
   'setting.changed',
 ];
+
+// BuiltInPowerupCodes.MultiLineCard in the pinned public SDK. Keep this local
+// constant so service tests do not load the browser-only SDK runtime.
+const MULTI_LINE_CARD_POWERUP_CODE = 'w';
 
 export type RemNoteReadOperation =
   | 'selected-text'
@@ -40,9 +46,21 @@ export class RemNoteAdapterError extends Error {
   }
 }
 
+export class UnsupportedFlashcardError extends Error {
+  readonly code = 'unsupported-card' as const;
+
+  constructor() {
+    super('The revealed flashcard answer cannot be resolved safely.');
+    this.name = 'UnsupportedFlashcardError';
+  }
+}
+
 type AdapterRem = {
   text: RichTextInterface | undefined;
   backText?: RichTextInterface;
+  getChildrenRem?: () => Promise<AdapterRem[]>;
+  hasPowerup?: (powerupCode: BuiltInPowerupCodes | string) => Promise<boolean>;
+  isCardItem?: () => Promise<boolean>;
 };
 
 type AdapterCard = {
@@ -73,8 +91,8 @@ export type RemNoteSdkFacade = {
   card: {
     findOne: (cardId: string) => Promise<AdapterCard | undefined>;
   };
-  richText: {
-    toString: (richText: RichTextInterface) => Promise<string>;
+  rem: {
+    findOne: (remId: string) => Promise<AdapterRem | undefined>;
   };
   app: {
     registerCommand: (command: {
@@ -125,10 +143,13 @@ export type RepeatCommand = {
 };
 
 export type RemNoteAdapter = {
-  getSelectedText: () => Promise<string | null>;
-  getFlashcardAnswer: () => Promise<string | null>;
-  getFlashcardAnswerByCardId: (cardId: string) => Promise<string | null>;
-  getFocusedRemText: () => Promise<string | null>;
+  getSelectedText: () => Promise<RichTextInterface | null>;
+  getFlashcardAnswer: () => Promise<RichTextInterface | null>;
+  getFlashcardAnswerByCardId: (
+    cardId: string,
+  ) => Promise<RichTextInterface | null>;
+  assertFlashcardRemSupported: (remId: string) => Promise<void>;
+  getFocusedRemText: () => Promise<RichTextInterface | null>;
   getFlashcardAnswerContext: () => Promise<FlashcardAnswerContext>;
   getPopupContextData: () => Promise<unknown>;
   getRepeatSettings: () => Promise<RepeatSettings>;
@@ -143,20 +164,56 @@ export type RemNoteAdapter = {
   showToast: (message: string) => Promise<void>;
 };
 
-async function readPlainText(
-  sdk: RemNoteSdkFacade,
+async function readRepeatContent(
   operation: RemNoteReadOperation,
   readRichText: () => Promise<RichTextInterface | undefined>,
-): Promise<string | null> {
+): Promise<RichTextInterface | null> {
   try {
-    const richText = await readRichText();
-    return richText === undefined ? null : await sdk.richText.toString(richText);
-  } catch {
+    return prepareRepeatContent(await readRichText());
+  } catch (cause) {
+    if (cause instanceof UnsupportedFlashcardError) {
+      throw cause;
+    }
+
     throw new RemNoteAdapterError({ operation, code: 'api-unavailable' });
   }
 }
 
-function answerRichText(
+async function isMultiLineCard(rem: AdapterRem): Promise<boolean> {
+  if (rem.isCardItem && (await rem.isCardItem())) {
+    return true;
+  }
+
+  if (
+    rem.hasPowerup &&
+    (await rem.hasPowerup(MULTI_LINE_CARD_POWERUP_CODE))
+  ) {
+    return true;
+  }
+
+  if (!rem.getChildrenRem) {
+    return false;
+  }
+
+  const children = await rem.getChildrenRem();
+  const cardItemFlags = await Promise.all(
+    children.map((child) => child.isCardItem?.() ?? Promise.resolve(false)),
+  );
+  return cardItemFlags.some(Boolean);
+}
+
+async function answerRichText(
+  cardType: PluginCardType,
+  rem: AdapterRem,
+): Promise<RichTextInterface | undefined> {
+  if (await isMultiLineCard(rem)) {
+    throw new UnsupportedFlashcardError();
+  }
+
+  return answerRichTextForDirection(cardType, rem);
+}
+
+function answerRichTextForDirection(
   cardType: PluginCardType,
   rem: AdapterRem,
 ): RichTextInterface | undefined {
@@ -178,45 +235,98 @@ export function createRemNoteAdapterFromSdk(
 ): RemNoteAdapter {
   return {
     getSelectedText: () =>
-      readPlainText(sdk, 'selected-text', async () => {
+      readRepeatContent('selected-text', async () => {
         const selection = await sdk.editor.getSelectedText();
         return selection?.richText;
       }),
 
     getFlashcardAnswer: () =>
-      readPlainText(sdk, 'flashcard-answer', async () => {
-        if (!(await sdk.queue.hasRevealedAnswer())) {
-          return undefined;
-        }
-
+      readRepeatContent('flashcard-answer', async () => {
+        const revealed = await sdk.queue.hasRevealedAnswer();
         const card = await sdk.queue.getCurrentCard();
         if (!card) {
           return undefined;
         }
 
         const rem = await card.getRem();
-        return rem ? answerRichText(card.type, rem) : undefined;
+        if (!rem) {
+          return undefined;
+        }
+
+        // RemNote can report hasRevealedAnswer() as false between item-level
+        // steps of a multi-line card. Shape inspection is content-free and
+        // must happen first so the keyboard path still fails closed.
+        if (await isMultiLineCard(rem)) {
+          throw new UnsupportedFlashcardError();
+        }
+
+        return revealed ? answerRichTextForDirection(card.type, rem) : undefined;
       }),
 
     getFlashcardAnswerByCardId: (cardId) =>
-      readPlainText(sdk, 'flashcard-answer', async () => {
+      readRepeatContent('flashcard-answer', async () => {
         const card = await sdk.card.findOne(cardId);
         if (!card) {
           return undefined;
         }
 
         const rem = await card.getRem();
-        return rem ? answerRichText(card.type, rem) : undefined;
+        return rem ? await answerRichText(card.type, rem) : undefined;
       }),
 
+    assertFlashcardRemSupported: async (remId) => {
+      try {
+        const rem = await sdk.rem.findOne(remId);
+        if (rem && (await isMultiLineCard(rem))) {
+          throw new UnsupportedFlashcardError();
+        }
+      } catch (cause) {
+        if (cause instanceof UnsupportedFlashcardError) {
+          throw cause;
+        }
+
+        throw new RemNoteAdapterError({
+          operation: 'flashcard-answer',
+          code: 'api-unavailable',
+        });
+      }
+    },
+
     getFocusedRemText: async () => {
+      let focusedRem: AdapterRem | undefined;
+
+      try {
+        focusedRem = await sdk.focus.getFocusedRem();
+      } catch {
+        // The focused editor API can still provide a valid target when the
+        // focused Rem API is unavailable in the current host or context.
+      }
+
+      if (focusedRem) {
+        try {
+          if (await isMultiLineCard(focusedRem)) {
+            throw new UnsupportedFlashcardError();
+          }
+        } catch (cause) {
+          if (cause instanceof UnsupportedFlashcardError) {
+            throw cause;
+          }
+
+          // If the focused Rem was found but its card shape cannot be checked,
+          // do not expose editor text that may be an incomplete multi-line
+          // answer.
+          throw new RemNoteAdapterError({
+            operation: 'focused-rem',
+            code: 'api-unavailable',
+          });
+        }
+      }
+
       try {
         const focusedEditorText = await sdk.editor.getFocusedEditorText();
-        if (focusedEditorText !== undefined) {
-          const plainEditorText = await sdk.richText.toString(focusedEditorText);
-          if (plainEditorText.trim()) {
-            return plainEditorText;
-          }
+        const editorContent = prepareRepeatContent(focusedEditorText);
+        if (editorContent) {
+          return editorContent;
         }
       } catch {
         // The focused Rem API remains a safe fallback when the editor API is
@@ -224,11 +334,19 @@ export function createRemNoteAdapterFromSdk(
       }
 
       try {
-        const rem = await sdk.focus.getFocusedRem();
-        return rem?.text === undefined
-          ? null
-          : await sdk.richText.toString(rem.text);
-      } catch {
+        if (!focusedRem) {
+          focusedRem = await sdk.focus.getFocusedRem();
+          if (focusedRem && (await isMultiLineCard(focusedRem))) {
+            throw new UnsupportedFlashcardError();
+          }
+        }
+
+        return prepareRepeatContent(focusedRem?.text);
+      } catch (cause) {
+        if (cause instanceof UnsupportedFlashcardError) {
+          throw cause;
+        }
+
         throw new RemNoteAdapterError({
           operation: 'focused-rem',
           code: 'api-unavailable',
@@ -290,8 +408,8 @@ export function createRemNoteAdapter(plugin: RNPlugin): RemNoteAdapter {
     card: {
       findOne: (cardId) => plugin.card.findOne(cardId),
     },
-    richText: {
-      toString: (richText) => plugin.richText.toString(richText),
+    rem: {
+      findOne: (remId) => plugin.rem.findOne(remId),
     },
     app: {
       registerCommand: (command) => plugin.app.registerCommand(command),

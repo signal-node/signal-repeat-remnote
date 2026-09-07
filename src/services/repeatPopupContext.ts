@@ -3,6 +3,7 @@ import {
   validateBooleanSetting,
   validateRepeatDuration,
 } from './settingsService';
+import { prepareRepeatContent } from './repeatContent';
 import type { RepeatPopupContextData } from '../types/repeatSession';
 
 export function parseRepeatPopupContext(
@@ -13,15 +14,13 @@ export function parseRepeatPopupContext(
   }
 
   const candidate = contextData as Record<string, unknown>;
-  if (
-    typeof candidate.targetText !== 'string' ||
-    candidate.targetText.trim().length === 0
-  ) {
+  const targetRichText = prepareRepeatContent(candidate.targetRichText);
+  if (!targetRichText) {
     return null;
   }
 
   return {
-    targetText: candidate.targetText,
+    targetRichText,
     durationSeconds: validateRepeatDuration(candidate.durationSeconds),
     showProgressBar: validateBooleanSetting(
       candidate.showProgressBar,

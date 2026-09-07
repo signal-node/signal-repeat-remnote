@@ -1,4 +1,7 @@
-import type { RemNoteAdapter } from './remnoteAdapter';
+import {
+  UnsupportedFlashcardError,
+  type RemNoteAdapter,
+} from './remnoteAdapter';
 import { resolveRepeatTarget } from './targetResolver';
 import type { RepeatTarget } from '../types/repeatSession';
 
@@ -6,11 +9,14 @@ export const TARGET_MISSING_MESSAGE =
   'Signal Repeat: 反復するテキストを選択してください。';
 export const START_FAILED_MESSAGE =
   'Signal Repeat: 反復セッションを開始できませんでした。';
+export const UNSUPPORTED_CARD_MESSAGE =
+  'Signal Repeat: このカード形式にはまだ対応していません。';
 
 export type RepeatTargetResolver = () => Promise<RepeatTarget | null>;
 export type StartRepeatResult =
   | 'started'
   | 'target-missing'
+  | 'unsupported-card'
   | 'failed'
   | 'cancelled';
 
@@ -50,14 +56,19 @@ export async function startRepeat(
     }
 
     await adapter.openRepeatPopup({
-      targetText: target.text,
+      targetRichText: target.content,
       durationSeconds: settings.duration,
       showProgressBar: settings.showProgressBar,
       showCloseHint: settings.showCloseHint,
     });
 
     return 'started';
-  } catch {
+  } catch (cause) {
+    if (cause instanceof UnsupportedFlashcardError) {
+      await adapter.showToast(UNSUPPORTED_CARD_MESSAGE).catch(() => undefined);
+      return 'unsupported-card';
+    }
+
     await adapter.showToast(START_FAILED_MESSAGE).catch(() => undefined);
     return 'failed';
   }

@@ -1,10 +1,8 @@
-import {
-  renderWidget,
-  usePlugin,
-} from '@remnote/plugin-sdk';
+import { renderWidget, usePlugin } from '@remnote/plugin-sdk';
 import ReactDOM from 'react-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RepeatSessionModal } from '../components/RepeatSessionModal';
+import { RepeatRichTextContent } from '../components/RepeatRichTextContent';
 import { createRemNoteAdapter } from '../services/remnoteAdapter';
 import { parseRepeatPopupContext } from '../services/repeatPopupContext';
 import type {
@@ -15,7 +13,7 @@ import '../style.css';
 import '../index.css';
 
 const PREVIEW_CONTEXT: RepeatPopupContextData = {
-  targetText: 'Repeat only what matters.',
+  targetRichText: ['Repeat only what matters.'],
   durationSeconds: 10,
   showProgressBar: true,
   showCloseHint: true,
@@ -87,7 +85,9 @@ function PopupWidget(): JSX.Element | null {
 
   return (
     <RepeatSessionModal
-      targetText={context.targetText}
+      targetContent={
+        <RepeatRichTextContent content={context.targetRichText} />
+      }
       durationMs={context.durationSeconds * 1_000}
       showProgressBar={context.showProgressBar}
       showCloseHint={context.showCloseHint}
@@ -106,7 +106,11 @@ function BrowserPreview(): JSX.Element | null {
 
   return (
     <RepeatSessionModal
-      targetText={previewMode === 'long' ? LONG_PREVIEW_TEXT : PREVIEW_CONTEXT.targetText}
+      targetContent={
+        previewMode === 'long'
+          ? LONG_PREVIEW_TEXT
+          : PREVIEW_CONTEXT.targetRichText[0]
+      }
       durationMs={PREVIEW_CONTEXT.durationSeconds * 1_000}
       showProgressBar={PREVIEW_CONTEXT.showProgressBar}
       showCloseHint={PREVIEW_CONTEXT.showCloseHint}

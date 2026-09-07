@@ -17,7 +17,8 @@ describe('flashcard answer integration', () => {
 
   it('resolves a revealed card by its exact card ID', async () => {
     const adapter = {
-      getFlashcardAnswerByCardId: vi.fn(async () => '  answer  '),
+      assertFlashcardRemSupported: vi.fn(async () => undefined),
+      getFlashcardAnswerByCardId: vi.fn(async () => ['answer']),
     };
 
     await expect(
@@ -26,8 +27,9 @@ describe('flashcard answer integration', () => {
         cardId: 'card-id',
         revealed: true,
       }),
-    ).resolves.toEqual({ text: 'answer', source: 'flashcard-answer' });
+    ).resolves.toEqual({ content: ['answer'], source: 'flashcard-answer' });
     expect(adapter.getFlashcardAnswerByCardId).toHaveBeenCalledWith('card-id');
+    expect(adapter.assertFlashcardRemSupported).toHaveBeenCalledWith('rem-id');
   });
 
   it.each([
@@ -35,18 +37,27 @@ describe('flashcard answer integration', () => {
     { remId: 'rem-id', revealed: true },
   ])('does not read a hidden or unidentified card', async (context) => {
     const adapter = {
-      getFlashcardAnswerByCardId: vi.fn(async () => 'answer'),
+      assertFlashcardRemSupported: vi.fn(async () => undefined),
+      getFlashcardAnswerByCardId: vi.fn(async () => ['answer']),
     };
 
     await expect(
       resolveFlashcardAnswerTarget(adapter, context),
     ).resolves.toBeNull();
     expect(adapter.getFlashcardAnswerByCardId).not.toHaveBeenCalled();
+    if (context.revealed) {
+      expect(adapter.assertFlashcardRemSupported).toHaveBeenCalledWith(
+        context.remId,
+      );
+    } else {
+      expect(adapter.assertFlashcardRemSupported).not.toHaveBeenCalled();
+    }
   });
 
   it('treats an empty or unsupported answer as no target', async () => {
     const adapter = {
-      getFlashcardAnswerByCardId: vi.fn(async () => '  '),
+      assertFlashcardRemSupported: vi.fn(async () => undefined),
+      getFlashcardAnswerByCardId: vi.fn(async () => ['  ']),
     };
 
     await expect(
@@ -56,5 +67,39 @@ describe('flashcard answer integration', () => {
         revealed: true,
       }),
     ).resolves.toBeNull();
+  });
+
+  it('accepts an audio-only answer as a repeat target', async () => {
+    const audio = { i: 'a' as const, url: 'https://example.invalid/audio.mp3' };
+    const adapter = {
+      assertFlashcardRemSupported: vi.fn(async () => undefined),
+      getFlashcardAnswerByCardId: vi.fn(async () => [audio]),
+    };
+
+    await expect(
+      resolveFlashcardAnswerTarget(adapter, {
+        remId: 'rem-id',
+        cardId: 'card-id',
+        revealed: true,
+      }),
+    ).resolves.toEqual({ content: [audio], source: 'flashcard-answer' });
+  });
+
+  it('rejects a revealed multiline Rem even when the card ID is absent', async () => {
+    const unsupported = new Error('unsupported');
+    const adapter = {
+      assertFlashcardRemSupported: vi.fn(async () => {
+        throw unsupported;
+      }),
+      getFlashcardAnswerByCardId: vi.fn(async () => ['incorrect parent answer']),
+    };
+
+    await expect(
+      resolveFlashcardAnswerTarget(adapter, {
+        remId: 'multiline-rem-id',
+        revealed: true,
+      }),
+    ).rejects.toBe(unsupported);
+    expect(adapter.getFlashcardAnswerByCardId).not.toHaveBeenCalled();
   });
 });
