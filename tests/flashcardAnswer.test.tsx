@@ -17,7 +17,7 @@ describe('flashcard answer integration', () => {
 
   it('resolves a revealed card by its exact card ID', async () => {
     const adapter = {
-      assertFlashcardRemSupported: vi.fn(async () => undefined),
+      getCurrentFlashcardAnswerForRem: vi.fn(async () => ['current answer']),
       getFlashcardAnswerByCardId: vi.fn(async () => ['answer']),
     };
 
@@ -28,16 +28,21 @@ describe('flashcard answer integration', () => {
         revealed: true,
       }),
     ).resolves.toEqual({ content: ['answer'], source: 'flashcard-answer' });
-    expect(adapter.getFlashcardAnswerByCardId).toHaveBeenCalledWith('card-id');
-    expect(adapter.assertFlashcardRemSupported).not.toHaveBeenCalled();
+    expect(adapter.getFlashcardAnswerByCardId).toHaveBeenCalledWith(
+      'card-id',
+      'rem-id',
+    );
+    expect(adapter.getCurrentFlashcardAnswerForRem).not.toHaveBeenCalled();
   });
 
-  it.each([
-    { remId: 'rem-id', cardId: 'card-id', revealed: false },
-    { remId: 'rem-id', revealed: true },
-  ])('does not read a hidden or unidentified card', async (context) => {
+  it('does not read a hidden card', async () => {
+    const context = {
+      remId: 'rem-id',
+      cardId: 'card-id',
+      revealed: false,
+    };
     const adapter = {
-      assertFlashcardRemSupported: vi.fn(async () => undefined),
+      getCurrentFlashcardAnswerForRem: vi.fn(async () => ['current answer']),
       getFlashcardAnswerByCardId: vi.fn(async () => ['answer']),
     };
 
@@ -45,18 +50,12 @@ describe('flashcard answer integration', () => {
       resolveFlashcardAnswerTarget(adapter, context),
     ).resolves.toBeNull();
     expect(adapter.getFlashcardAnswerByCardId).not.toHaveBeenCalled();
-    if (context.revealed) {
-      expect(adapter.assertFlashcardRemSupported).toHaveBeenCalledWith(
-        context.remId,
-      );
-    } else {
-      expect(adapter.assertFlashcardRemSupported).not.toHaveBeenCalled();
-    }
+    expect(adapter.getCurrentFlashcardAnswerForRem).not.toHaveBeenCalled();
   });
 
   it('treats an empty or unsupported answer as no target', async () => {
     const adapter = {
-      assertFlashcardRemSupported: vi.fn(async () => undefined),
+      getCurrentFlashcardAnswerForRem: vi.fn(async () => ['current answer']),
       getFlashcardAnswerByCardId: vi.fn(async () => ['  ']),
     };
 
@@ -72,7 +71,7 @@ describe('flashcard answer integration', () => {
   it('accepts an audio-only answer as a repeat target', async () => {
     const audio = { i: 'a' as const, url: 'https://example.invalid/audio.mp3' };
     const adapter = {
-      assertFlashcardRemSupported: vi.fn(async () => undefined),
+      getCurrentFlashcardAnswerForRem: vi.fn(async () => ['current answer']),
       getFlashcardAnswerByCardId: vi.fn(async () => [audio]),
     };
 
@@ -85,10 +84,31 @@ describe('flashcard answer integration', () => {
     ).resolves.toEqual({ content: [audio], source: 'flashcard-answer' });
   });
 
-  it('rejects a revealed multiline Rem even when the card ID is absent', async () => {
+  it('uses the matching current queue card when the card ID is absent', async () => {
+    const adapter = {
+      getCurrentFlashcardAnswerForRem: vi.fn(async () => ['current answer']),
+      getFlashcardAnswerByCardId: vi.fn(async () => ['other answer']),
+    };
+
+    await expect(
+      resolveFlashcardAnswerTarget(adapter, {
+        remId: 'current-rem-id',
+        revealed: true,
+      }),
+    ).resolves.toEqual({
+      content: ['current answer'],
+      source: 'flashcard-answer',
+    });
+    expect(adapter.getCurrentFlashcardAnswerForRem).toHaveBeenCalledWith(
+      'current-rem-id',
+    );
+    expect(adapter.getFlashcardAnswerByCardId).not.toHaveBeenCalled();
+  });
+
+  it('propagates an unsupported current queue card without a card ID', async () => {
     const unsupported = new Error('unsupported');
     const adapter = {
-      assertFlashcardRemSupported: vi.fn(async () => {
+      getCurrentFlashcardAnswerForRem: vi.fn(async () => {
         throw unsupported;
       }),
       getFlashcardAnswerByCardId: vi.fn(async () => ['incorrect parent answer']),

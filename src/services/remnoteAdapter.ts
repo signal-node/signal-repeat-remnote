@@ -65,6 +65,7 @@ type AdapterRem = {
 };
 
 type AdapterCard = {
+  remId: string;
   type: PluginCardType;
   getRem: () => Promise<AdapterRem | undefined>;
 };
@@ -148,6 +149,10 @@ export type RemNoteAdapter = {
   getFlashcardAnswer: () => Promise<RichTextInterface | null>;
   getFlashcardAnswerByCardId: (
     cardId: string,
+    remId?: string,
+  ) => Promise<RichTextInterface | null>;
+  getCurrentFlashcardAnswerForRem: (
+    remId: string,
   ) => Promise<RichTextInterface | null>;
   assertFlashcardRemSupported: (remId: string) => Promise<void>;
   getFocusedRemText: () => Promise<RichTextInterface | null>;
@@ -248,7 +253,7 @@ async function resolveForwardMultiLineSetAnswer(
 
   const answer: RichTextInterface = [];
 
-  for (const [index, item] of cardItems.entries()) {
+  for (const item of cardItems) {
     // Numbered card items are revealed one at a time. The public SDK does not
     // expose which List item is currently rendered, so they remain disabled.
     if (!item.isListItem || (await item.isListItem())) {
@@ -263,26 +268,55 @@ async function resolveForwardMultiLineSetAnswer(
 
     const content = prepareRepeatContent(item.text);
     if (!content) {
+      // RemNote can retain an empty trailing card-item Rem while editing a
+      // Set. It is not rendered as an answer in the queue, so omit only
+      // structurally empty RichText. Non-empty unsupported elements still
+      // fail closed rather than producing an incomplete answer.
+      if (isEmptyRichText(item.text)) {
+        continue;
+      }
       throw new UnsupportedFlashcardError();
     }
 
-    if (index > 0) {
+    if (answer.length > 0) {
       answer.push('\n');
     }
     answer.push(...content);
   }
 
+  if (answer.length === 0) {
+    throw new UnsupportedFlashcardError();
+  }
+
   return answer;
 }
 
-async function isMultiLineCardParent(rem: AdapterRem): Promise<boolean> {
-  if (
-    rem.hasPowerup &&
-    (await rem.hasPowerup(MULTI_LINE_CARD_POWERUP_CODE))
-  ) {
-    return true;
+function isEmptyRichText(value: unknown): boolean {
+  if (!Array.isArray(value)) {
+    return false;
   }
 
+  return value.every((element: unknown) => {
+    if (typeof element === 'string') {
+      return element.trim().length === 0;
+    }
+
+    if (typeof element !== 'object' || element === null) {
+      return false;
+    }
+
+    const richTextElement = element as Record<string, unknown>;
+    return (
+      (richTextElement.i === 'm' ||
+        richTextElement.i === 'x' ||
+        richTextElement.i === 'n') &&
+      typeof richTextElement.text === 'string' &&
+      richTextElement.text.trim().length === 0
+    );
+  });
+}
+
+async function isMultiLineCardParent(rem: AdapterRem): Promise<boolean> {
   if (!rem.getChildrenRem) {
     return false;
   }
@@ -350,11 +384,42 @@ export function createRemNoteAdapterFromSdk(
         return answerRichText(card.type, rem);
       }),
 
-    getFlashcardAnswerByCardId: (cardId) =>
+    getFlashcardAnswerByCardId: (cardId, remId) =>
       readRepeatContent('flashcard-answer', async () => {
         const card = await sdk.card.findOne(cardId);
         if (!card) {
           return undefined;
+        }
+
+        // On multi-line cards Card.getRem() can expose a generated Rem without
+        // the parent's multi-line metadata. Resolve the card's public remId
+        // directly first; the widget remId remains a compatibility fallback.
+        const owningRem = await sdk.rem.findOne(card.remId);
+        if (owningRem && (await isMultiLineCard(owningRem))) {
+          return answerRichText(card.type, owningRem);
+        }
+
+        if (remId) {
+          const contextualRem = await sdk.rem.findOne(remId);
+          if (contextualRem && (await isMultiLineCard(contextualRem))) {
+            return answerRichText(card.type, contextualRem);
+          }
+        }
+
+        const rem = await card.getRem();
+        return rem ? await answerRichText(card.type, rem) : undefined;
+      }),
+
+    getCurrentFlashcardAnswerForRem: (remId) =>
+      readRepeatContent('flashcard-answer', async () => {
+        const card = await sdk.queue.getCurrentCard();
+        if (!card || card.remId !== remId) {
+          return undefined;
+        }
+
+        const owningRem = await sdk.rem.findOne(card.remId);
+        if (owningRem && (await isMultiLineCard(owningRem))) {
+          return answerRichText(card.type, owningRem);
         }
 
         const rem = await card.getRem();

@@ -37,9 +37,10 @@ outside the v0.1.0 scope and safely produces a target-missing notification.
 Signal Repeat never rates the card or changes its schedule.
 
 Multi-line answers are enabled only when the public SDK identifies the exact
-card and answer shape. A forward Set uses its ordered direct card-item children;
-a backward multi-line card uses its immediate parent text. List, Partial,
-recursive, and missing-card-ID cases remain disabled and show a fixed
+card direction and answer shape. A forward Set uses its ordered direct card-item
+children (ignoring structurally empty editor placeholders); a backward
+multi-line card uses its immediate parent text. List, Partial, recursive, and
+cases where the current card cannot be matched remain disabled and show a fixed
 unsupported-card notification instead of guessing from the parent Rem.
 
 ### Keyboard shortcut

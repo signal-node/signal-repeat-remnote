@@ -70,6 +70,7 @@ describe('RemNote adapter reads', () => {
     const sdk = createSdk();
     vi.mocked(sdk.queue.hasRevealedAnswer).mockResolvedValue(true);
     vi.mocked(sdk.queue.getCurrentCard).mockResolvedValue({
+      remId: 'rem-id',
       type: 'forward',
       getRem: async () => ({ text: text('question'), backText: text('answer') }),
     });
@@ -82,6 +83,7 @@ describe('RemNote adapter reads', () => {
   it('returns null for a hidden normal card after checking its shape', async () => {
     const sdk = createSdk();
     vi.mocked(sdk.queue.getCurrentCard).mockResolvedValue({
+      remId: 'rem-id',
       type: 'forward',
       getRem: async () => ({ text: text('question'), backText: text('answer') }),
     });
@@ -93,6 +95,7 @@ describe('RemNote adapter reads', () => {
   it('rejects a hidden or item-level multiline card from the keyboard path', async () => {
     const sdk = createSdk();
     vi.mocked(sdk.queue.getCurrentCard).mockResolvedValue({
+      remId: 'rem-id',
       type: 'forward',
       getRem: async () => ({
         text: text('question'),
@@ -111,6 +114,7 @@ describe('RemNote adapter reads', () => {
   ])('resolves a %s card answer by card ID', async (type, expected) => {
     const sdk = createSdk();
     vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'rem-id',
       type,
       getRem: async () => ({ text: text('question'), backText: text('answer') }),
     });
@@ -124,6 +128,7 @@ describe('RemNote adapter reads', () => {
   it('does not guess the answer for a Cloze card', async () => {
     const sdk = createSdk();
     vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'rem-id',
       type: { clozeId: 'cloze-id' },
       getRem: async () => ({ text: text('whole Rem') }),
     });
@@ -136,6 +141,7 @@ describe('RemNote adapter reads', () => {
   it('rejects a card marked with the multiline powerup', async () => {
     const sdk = createSdk();
     vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'rem-id',
       type: 'forward',
       getRem: async () => ({
         text: text('question'),
@@ -152,6 +158,7 @@ describe('RemNote adapter reads', () => {
   it('rejects a card with multiline child items', async () => {
     const sdk = createSdk();
     vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'rem-id',
       type: 'forward',
       getRem: async () => ({
         text: text('question'),
@@ -179,6 +186,7 @@ describe('RemNote adapter reads', () => {
       onlyAudio: true,
     };
     vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'rem-id',
       type: 'forward',
       getRem: async () => ({
         text: text('question'),
@@ -215,9 +223,94 @@ describe('RemNote adapter reads', () => {
     ]);
   });
 
+  it('ignores empty trailing card items in a forward Set', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'rem-id',
+      type: 'forward',
+      getRem: async () => ({
+        text: text('question'),
+        hasPowerup: vi.fn(async () => true),
+        getChildrenRem: vi.fn(async () => [
+          {
+            text: text('first'),
+            isCardItem: vi.fn(async () => true),
+            isListItem: vi.fn(async () => false),
+            // RemNote reports the parent multiline powerup on direct items;
+            // that alone does not make the item recursive.
+            hasPowerup: vi.fn(async () => true),
+          },
+          {
+            text: text('second'),
+            isCardItem: vi.fn(async () => true),
+            isListItem: vi.fn(async () => false),
+          },
+          {
+            text: ['  '],
+            isCardItem: vi.fn(async () => true),
+            isListItem: vi.fn(async () => false),
+          },
+        ]),
+      }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswerByCardId('card-id'),
+    ).resolves.toEqual(['first', '\n', 'second']);
+  });
+
+  it('rejects a forward Set whose card items are all empty', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'rem-id',
+      type: 'forward',
+      getRem: async () => ({
+        text: text('question'),
+        hasPowerup: vi.fn(async () => true),
+        getChildrenRem: vi.fn(async () => [
+          {
+            text: [],
+            isCardItem: vi.fn(async () => true),
+            isListItem: vi.fn(async () => false),
+          },
+        ]),
+      }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswerByCardId('card-id'),
+    ).rejects.toBeInstanceOf(UnsupportedFlashcardError);
+  });
+
+  it('rejects non-empty unsupported content in a forward Set item', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'rem-id',
+      type: 'forward',
+      getRem: async () => ({
+        text: text('question'),
+        hasPowerup: vi.fn(async () => true),
+        getChildrenRem: vi.fn(async () => [
+          {
+            text: [
+              { i: 'unknown-rich-text-element' },
+            ] as unknown as RichTextInterface,
+            isCardItem: vi.fn(async () => true),
+            isListItem: vi.fn(async () => false),
+          },
+        ]),
+      }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswerByCardId('card-id'),
+    ).rejects.toBeInstanceOf(UnsupportedFlashcardError);
+  });
+
   it('resolves a backward multiline card to its parent text', async () => {
     const sdk = createSdk();
     vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'rem-id',
       type: 'backward',
       getRem: async () => ({
         text: text('immediate parent'),
@@ -230,10 +323,69 @@ describe('RemNote adapter reads', () => {
     ).resolves.toEqual(text('immediate parent'));
   });
 
+  it('uses the contextual multiline Rem with the exact card direction', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'generated-card-rem-id',
+      type: 'forward',
+      getRem: async () => ({ text: text('generated card Rem') }),
+    });
+    vi.mocked(sdk.rem.findOne).mockImplementation(async (remId) =>
+      remId === 'context-rem-id'
+        ? {
+            text: text('question'),
+            hasPowerup: vi.fn(async () => true),
+            getChildrenRem: vi.fn(async () => [
+              {
+                text: text('list item'),
+                isCardItem: vi.fn(async () => true),
+                isListItem: vi.fn(async () => true),
+              },
+            ]),
+          }
+        : undefined,
+    );
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswerByCardId(
+        'card-id',
+        'context-rem-id',
+      ),
+    ).rejects.toBeInstanceOf(UnsupportedFlashcardError);
+    expect(sdk.rem.findOne).toHaveBeenNthCalledWith(
+      1,
+      'generated-card-rem-id',
+    );
+    expect(sdk.rem.findOne).toHaveBeenNthCalledWith(2, 'context-rem-id');
+  });
+
+  it('does not replace a normal card Rem with unrelated contextual text', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'card-rem-id',
+      type: 'forward',
+      getRem: async () => ({
+        text: text('question'),
+        backText: text('exact answer'),
+      }),
+    });
+    vi.mocked(sdk.rem.findOne).mockResolvedValue({
+      text: text('context text'),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswerByCardId(
+        'card-id',
+        'context-rem-id',
+      ),
+    ).resolves.toEqual(text('exact answer'));
+  });
+
   it('resolves a revealed forward Set from the queue keyboard path', async () => {
     const sdk = createSdk();
     vi.mocked(sdk.queue.hasRevealedAnswer).mockResolvedValue(true);
     vi.mocked(sdk.queue.getCurrentCard).mockResolvedValue({
+      remId: 'rem-id',
       type: 'forward',
       getRem: async () => ({
         text: text('question'),
@@ -262,6 +414,7 @@ describe('RemNote adapter reads', () => {
     const sdk = createSdk();
     vi.mocked(sdk.queue.hasRevealedAnswer).mockResolvedValue(true);
     vi.mocked(sdk.queue.getCurrentCard).mockResolvedValue({
+      remId: 'rem-id',
       type: 'backward',
       getRem: async () => ({
         text: text('immediate parent'),
@@ -274,9 +427,61 @@ describe('RemNote adapter reads', () => {
     ).resolves.toEqual(text('immediate parent'));
   });
 
+  it('resolves the current card only when its Rem matches the widget context', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.queue.getCurrentCard).mockResolvedValue({
+      remId: 'matching-rem-id',
+      type: 'backward',
+      getRem: async () => ({ text: text('exact current answer') }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getCurrentFlashcardAnswerForRem(
+        'matching-rem-id',
+      ),
+    ).resolves.toEqual(text('exact current answer'));
+  });
+
+  it('rejects a stale widget context instead of reading another queue card', async () => {
+    const sdk = createSdk();
+    const getRem = vi.fn(async () => ({ text: text('wrong answer') }));
+    vi.mocked(sdk.queue.getCurrentCard).mockResolvedValue({
+      remId: 'new-rem-id',
+      type: 'backward',
+      getRem,
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getCurrentFlashcardAnswerForRem(
+        'stale-rem-id',
+      ),
+    ).resolves.toBeNull();
+    expect(getRem).not.toHaveBeenCalled();
+  });
+
+  it('uses contextual multiline shape for a matching current queue card', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.queue.getCurrentCard).mockResolvedValue({
+      remId: 'matching-rem-id',
+      type: 'backward',
+      getRem: async () => ({ text: text('generated card Rem') }),
+    });
+    vi.mocked(sdk.rem.findOne).mockResolvedValue({
+      text: text('immediate parent'),
+      hasPowerup: vi.fn(async () => true),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getCurrentFlashcardAnswerForRem(
+        'matching-rem-id',
+      ),
+    ).resolves.toEqual(text('immediate parent'));
+  });
+
   it('rejects a forward List because the current item is not public', async () => {
     const sdk = createSdk();
     vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'rem-id',
       type: 'forward',
       getRem: async () => ({
         text: text('question'),
@@ -299,6 +504,7 @@ describe('RemNote adapter reads', () => {
   it('rejects a recursive forward Set with an expandable child answer', async () => {
     const sdk = createSdk();
     vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'rem-id',
       type: 'forward',
       getRem: async () => ({
         text: text('question'),
@@ -308,7 +514,12 @@ describe('RemNote adapter reads', () => {
             text: text('nested item'),
             isCardItem: vi.fn(async () => true),
             isListItem: vi.fn(async () => false),
-            hasPowerup: vi.fn(async () => true),
+            getChildrenRem: vi.fn(async () => [
+              {
+                text: text('nested answer'),
+                isCardItem: vi.fn(async () => true),
+              },
+            ]),
           },
         ]),
       }),
@@ -322,6 +533,7 @@ describe('RemNote adapter reads', () => {
   it('rejects a Partial card owned by a multiline card item', async () => {
     const sdk = createSdk();
     vi.mocked(sdk.card.findOne).mockResolvedValue({
+      remId: 'rem-id',
       type: 'forward',
       getRem: async () => ({
         text: text('partial item'),
