@@ -65,3 +65,25 @@ fix it on a new branch and publish a patch version.
 8. Attach the generated `signal-repeat-remnote-v0.1.1.zip`, download it
    again, compare checksums, and install that downloaded asset before submitting
    the RemNote public listing.
+
+## v0.1.2 RichText and multi-line safety patch
+
+1. Confirm the RichText media and multi-line acceptance evidence in
+   `docs/mvp-acceptance-checklist.md` and `docs/remnote-sdk-verification.md`.
+2. Confirm version `0.1.2` in `package.json`, `package-lock.json`, and
+   `public/manifest.json`.
+3. From a clean checkout, repeat the setup, typecheck, test, build, and ZIP
+   integrity checks above.
+4. Install the candidate ZIP in RemNote Desktop and Web with synthetic content.
+   Confirm that media URLs are not exposed as body text, media never autoplays,
+   supported Set/backward answers are exact, and unsupported multi-line shapes
+   stop with the fixed notification.
+5. Confirm that the checks do not modify Rem content, ratings, schedules, or
+   queue state and do not add learning-content logging, storage, or network
+   calls.
+6. Confirm CI on the release Pull Request and again after merge to `main`.
+7. Create annotated tag `v0.1.2` from the verified `main` commit and publish the
+   GitHub Release using `docs/release-notes-v0.1.2.md`.
+8. Attach `signal-repeat-remnote-v0.1.2.zip`, download it again, compare
+   checksums, and install that downloaded asset before replacing any pending
+   RemNote public-listing submission.
