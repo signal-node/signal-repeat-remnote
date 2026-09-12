@@ -16,7 +16,7 @@ declarations expose every API needed for the MVP:
 | Selected text | `editor.getSelectedText()` returns `TextSelection \| undefined` | Read `richText` from the returned selection. Retain no content after the popup closes. |
 | Focused target | `editor.getFocusedEditorText()` and `focus.getFocusedRem()` | Prefer non-empty focused editor text, then the focused Rem's `text`. |
 | Popup | `widget.openPopup()` and `widget.closePopup(restoreFocus?)` | Pass target data through popup context and close with `closePopup(true)`. |
-| Flashcard answer | `FlashcardAnswer` context supplies `remId`, optional `cardId`, and `revealed` | Hide the action until `revealed` is true. Require `cardId` to resolve direction safely. |
+| Flashcard answer | `FlashcardAnswer` context supplies `remId`, optional `cardId`, and `revealed` | Hide the action until `revealed` is true. Resolve direction by `cardId`, or by an exact `queue.getCurrentCard()`/`remId` match when the ID is absent. |
 | Shortcut | `app.registerCommand()` accepts `keyboardShortcut` | Register the specification default, `alt+m`; re-check conflicts in Desktop and Web. |
 | Settings | Dropdown, boolean, string, and number registration APIs | Register the three MVP settings in issue #15 and read them through a dedicated service. |
 | Notification | `app.toast(message)` | Use only fixed messages that contain no learning content. |
@@ -114,18 +114,19 @@ fixture was then embedded with RemNote's Video command to verify the video-only
 path in Desktop and Web; its URL was not copied into logs or committed
 documentation.
 
-## Multi-line safety verification
+## Multi-line answer verification
 
-The current safety gate treats a card as multi-line when its owning Rem has the
-public `MultiLineCard` Powerup or a direct child reports `isCardItem()`. Until
-the rendered item can be identified exactly, the adapter raises a content-free
-unsupported-card result and target resolution must not fall back to the focused
-Rem.
+The adapter treats a card as multi-line when its owning Rem has the public
+`MultiLineCard` Powerup or a direct child reports `isCardItem()`. With an exact
+`cardId`, the public card direction and child `isListItem()` flags allow a
+limited safe subset to be reconstructed. Unresolved shapes still raise a
+content-free unsupported-card result and never fall back to the focused Rem.
 
 | Card shape | Expected result | Status |
 | --- | --- | --- |
-| Forward Set/List | Fixed unsupported notification; no popup. | **Passed with a synthetic Set on Desktop and Web** for the focused parent, focused card item, and revealed-answer widget. List uses the same public Powerup/card-item safety invariant and is covered by unit tests. |
-| Backward Set/List | Fixed unsupported notification; no popup. | Covered by the direction-independent Powerup/card-item gate and unit tests. No answer-direction inference occurs before rejection. |
+| Forward Set | Join direct card-item RichText in source order and omit only structurally empty editor placeholders. | Passed in a 2026-09-13 Desktop real queue: the popup showed both placeholder answers on separate lines. Unit tests also keep non-empty unsupported RichText fail-closed. Web regression remains pending. |
+| Forward List | Fixed unsupported notification; no popup. | Numbered card items are detected through `isListItem()`. A 2026-09-13 Desktop real-queue check confirmed the fixed notification and no popup after contextual parent resolution. The currently rendered item is not exposed by the public SDK. |
+| Backward Set/List | Repeat the owning parent Rem text. | Passed in a 2026-09-12 Desktop real queue: the popup showed the immediate parent. Web regression remains pending. |
 | Partial Set/List | Fixed unsupported notification; no popup. | Covered by the same shape gate and unit tests; Signal Repeat does not inspect or guess the currently rendered subset. |
 | Recursive Set/List | Fixed unsupported notification; no popup. | Covered by the same shape gate and unit tests; Signal Repeat does not traverse descendants to construct an answer. |
 
@@ -141,9 +142,33 @@ open a popup. No card was rated or advanced during these checks.
 The safety behavior is also covered at the public SDK boundary for focused
 parent Powerup, focused card item, direct child card item, no fallback after an
 unsupported result, and fail-closed behavior when card-shape inspection fails.
-Because Set, List, Partial, and recursive variants share these shape signals,
-the implementation deliberately disables all of them instead of attempting to
-reconstruct an answer or its rendered subset.
+When `cardId` is absent, the widget uses `queue.getCurrentCard()` only if its
+owning `remId` exactly matches the widget context; otherwise it returns no
+target. With an exact direction, only a non-numbered, non-recursive forward Set
+or a backward parent answer is enabled.
+
+On 2026-09-12, a Desktop preview of an existing two-way numbered List confirmed
+that the forward card reveals items sequentially and the backward card reveals
+the immediate parent as its answer. This verifies the direction and
+`isListItem()` design assumptions without changing or rating the card. A later
+Cards Table session used **Don't record answer choices** to put only the two
+matching cards into the real queue. It confirmed that the answer widget receives
+a usable `cardId` and `forward` card type, but `Card.getRem()` does not expose
+the parent multi-line shape. The adapter now combines that exact card direction
+with the owning or contextual parent Rem from `remId`; this host-specific
+boundary is covered by regression tests.
+
+On 2026-09-13, post-fix Desktop queue checks completed the supported-subset
+verification. The forward numbered List produced the fixed unsupported
+notification without opening a popup; its backward card opened a popup with the
+immediate parent. A synthetic forward Set opened a popup with its two direct
+answers in source order on separate lines. The public SDK also showed that a
+direct Set item can report the multi-line powerup itself, so recursive detection
+now depends on nested card-item children rather than that inherited flag. All
+checks used **Don't record answer choices** and no rating was selected. No
+Rem/card IDs or learning content were written to logs or documentation. An
+authenticated Web session was unavailable, so the Web regression remains
+pending.
 
 ## Web MVP regression verification
 
@@ -170,19 +195,24 @@ checked, fail closed. None of these calls modifies Rem content.
 ### Flashcard Answer
 
 The answer widget context does not contain rendered answer text. Resolve its
-`cardId` with `card.findOne()`, get the owning Rem, and select content by card
-type:
+`cardId` with `card.findOne()` for the exact direction. For a multi-line card,
+use the contextual `remId` to read the parent shape because `Card.getRem()` can
+return a generated Rem without that metadata:
 
 | Card type | Safe MVP answer source | Support |
 | --- | --- | --- |
 | `forward` | `rem.backText` | Supported when non-empty |
 | `backward` | `rem.text` | Supported when non-empty |
+| Multi-line `forward` Set | Ordered direct children where `isCardItem()` is true and `isListItem()` is false | Supported when non-recursive and every item has displayable RichText |
+| Multi-line `backward` | Owning parent `rem.text` | Supported with an exact card ID |
+| Multi-line List/Partial/recursive | The current rendered item/subset/expansion is not public | Unsupported |
 | `{ clozeId }` | The answer widget context has no dedicated rendered-answer field | Out of scope for MVP |
 
-If `cardId` is absent, the card cannot be distinguished safely as forward,
-backward, or Cloze. Signal Repeat must fall back to another target or show a
-fixed toast; it must not guess from `remId` alone. Cloze-aware extraction remains
-the v0.4 roadmap item defined by the product specification.
+If `cardId` is absent, use `queue.getCurrentCard()` only when its `remId` exactly
+matches the widget context. Otherwise the card cannot be distinguished safely
+as forward, backward, or Cloze, so Signal Repeat returns no target and never
+guesses from `remId` alone. Cloze-aware extraction remains the v0.4 roadmap item
+defined by the product specification.
 
 ## Desktop verification procedure
 
@@ -221,6 +251,8 @@ placeholder or real learning text into this document or DevTools.
   answer; a one-time context read remains stale across those transitions.
 - Register the MVP action only at `WidgetLocation.FlashcardAnswer`; the other
   working placements would duplicate the control.
-- Treat a missing `cardId` and Cloze card as unsupported instead of guessing.
+- When `cardId` is missing, require an exact current-card/context-Rem match;
+  treat a mismatch, unavailable current card, and Cloze as unsupported instead
+  of guessing.
 - Close the popup with `closePopup(true)` to restore the prior editor selection.
 - Never log or persist target RichText.
