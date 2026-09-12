@@ -29,7 +29,7 @@ describe('flashcard answer integration', () => {
       }),
     ).resolves.toEqual({ content: ['answer'], source: 'flashcard-answer' });
     expect(adapter.getFlashcardAnswerByCardId).toHaveBeenCalledWith('card-id');
-    expect(adapter.assertFlashcardRemSupported).toHaveBeenCalledWith('rem-id');
+    expect(adapter.assertFlashcardRemSupported).not.toHaveBeenCalled();
   });
 
   it.each([

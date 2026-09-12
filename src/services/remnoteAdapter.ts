@@ -61,6 +61,7 @@ type AdapterRem = {
   getChildrenRem?: () => Promise<AdapterRem[]>;
   hasPowerup?: (powerupCode: BuiltInPowerupCodes | string) => Promise<boolean>;
   isCardItem?: () => Promise<boolean>;
+  isListItem?: () => Promise<boolean>;
 };
 
 type AdapterCard = {
@@ -206,11 +207,94 @@ async function answerRichText(
   cardType: PluginCardType,
   rem: AdapterRem,
 ): Promise<RichTextInterface | undefined> {
-  if (await isMultiLineCard(rem)) {
+  if (!(await isMultiLineCard(rem))) {
+    return answerRichTextForDirection(cardType, rem);
+  }
+
+  if (rem.isCardItem && (await rem.isCardItem())) {
     throw new UnsupportedFlashcardError();
   }
 
-  return answerRichTextForDirection(cardType, rem);
+  if (cardType === 'backward') {
+    return rem.text;
+  }
+
+  if (cardType !== 'forward') {
+    throw new UnsupportedFlashcardError();
+  }
+
+  return resolveForwardMultiLineSetAnswer(rem);
+}
+
+async function resolveForwardMultiLineSetAnswer(
+  rem: AdapterRem,
+): Promise<RichTextInterface> {
+  if (!rem.getChildrenRem) {
+    throw new UnsupportedFlashcardError();
+  }
+
+  const children = await rem.getChildrenRem();
+  const cardItems: AdapterRem[] = [];
+
+  for (const child of children) {
+    if (child.isCardItem && (await child.isCardItem())) {
+      cardItems.push(child);
+    }
+  }
+
+  if (cardItems.length === 0) {
+    throw new UnsupportedFlashcardError();
+  }
+
+  const answer: RichTextInterface = [];
+
+  for (const [index, item] of cardItems.entries()) {
+    // Numbered card items are revealed one at a time. The public SDK does not
+    // expose which List item is currently rendered, so they remain disabled.
+    if (!item.isListItem || (await item.isListItem())) {
+      throw new UnsupportedFlashcardError();
+    }
+
+    // A nested multi-line item may be expanded in the queue. That expansion
+    // state is not public, so direct-child reconstruction would be incomplete.
+    if (await isMultiLineCardParent(item)) {
+      throw new UnsupportedFlashcardError();
+    }
+
+    const content = prepareRepeatContent(item.text);
+    if (!content) {
+      throw new UnsupportedFlashcardError();
+    }
+
+    if (index > 0) {
+      answer.push('\n');
+    }
+    answer.push(...content);
+  }
+
+  return answer;
+}
+
+async function isMultiLineCardParent(rem: AdapterRem): Promise<boolean> {
+  if (
+    rem.hasPowerup &&
+    (await rem.hasPowerup(MULTI_LINE_CARD_POWERUP_CODE))
+  ) {
+    return true;
+  }
+
+  if (!rem.getChildrenRem) {
+    return false;
+  }
+
+  const children = await rem.getChildrenRem();
+  for (const child of children) {
+    if (child.isCardItem && (await child.isCardItem())) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function answerRichTextForDirection(
@@ -256,11 +340,14 @@ export function createRemNoteAdapterFromSdk(
         // RemNote can report hasRevealedAnswer() as false between item-level
         // steps of a multi-line card. Shape inspection is content-free and
         // must happen first so the keyboard path still fails closed.
-        if (await isMultiLineCard(rem)) {
-          throw new UnsupportedFlashcardError();
+        if (!revealed) {
+          if (await isMultiLineCard(rem)) {
+            throw new UnsupportedFlashcardError();
+          }
+          return undefined;
         }
 
-        return revealed ? answerRichTextForDirection(card.type, rem) : undefined;
+        return answerRichText(card.type, rem);
       }),
 
     getFlashcardAnswerByCardId: (cardId) =>

@@ -171,6 +171,169 @@ describe('RemNote adapter reads', () => {
     ).rejects.toBeInstanceOf(UnsupportedFlashcardError);
   });
 
+  it('joins direct forward Set items in source order as RichText', async () => {
+    const sdk = createSdk();
+    const audio = {
+      i: 'a' as const,
+      url: 'https://example.invalid/audio.mp3',
+      onlyAudio: true,
+    };
+    vi.mocked(sdk.card.findOne).mockResolvedValue({
+      type: 'forward',
+      getRem: async () => ({
+        text: text('question'),
+        hasPowerup: vi.fn(async () => true),
+        getChildrenRem: vi.fn(async () => [
+          {
+            text: [
+              'first ',
+              { i: 'm' as const, text: 'formatted', b: true },
+            ],
+            isCardItem: vi.fn(async () => true),
+            isListItem: vi.fn(async () => false),
+          },
+          {
+            text: text('not in the answer'),
+            isCardItem: vi.fn(async () => false),
+          },
+          {
+            text: [audio],
+            isCardItem: vi.fn(async () => true),
+            isListItem: vi.fn(async () => false),
+          },
+        ]),
+      }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswerByCardId('card-id'),
+    ).resolves.toEqual([
+      'first ',
+      { i: 'm', text: 'formatted', b: true },
+      '\n',
+      audio,
+    ]);
+  });
+
+  it('resolves a backward multiline card to its parent text', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.card.findOne).mockResolvedValue({
+      type: 'backward',
+      getRem: async () => ({
+        text: text('immediate parent'),
+        hasPowerup: vi.fn(async () => true),
+      }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswerByCardId('card-id'),
+    ).resolves.toEqual(text('immediate parent'));
+  });
+
+  it('resolves a revealed forward Set from the queue keyboard path', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.queue.hasRevealedAnswer).mockResolvedValue(true);
+    vi.mocked(sdk.queue.getCurrentCard).mockResolvedValue({
+      type: 'forward',
+      getRem: async () => ({
+        text: text('question'),
+        hasPowerup: vi.fn(async () => true),
+        getChildrenRem: vi.fn(async () => [
+          {
+            text: text('first'),
+            isCardItem: vi.fn(async () => true),
+            isListItem: vi.fn(async () => false),
+          },
+          {
+            text: text('second'),
+            isCardItem: vi.fn(async () => true),
+            isListItem: vi.fn(async () => false),
+          },
+        ]),
+      }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswer(),
+    ).resolves.toEqual(['first', '\n', 'second']);
+  });
+
+  it('resolves a revealed backward multiline card from the queue keyboard path', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.queue.hasRevealedAnswer).mockResolvedValue(true);
+    vi.mocked(sdk.queue.getCurrentCard).mockResolvedValue({
+      type: 'backward',
+      getRem: async () => ({
+        text: text('immediate parent'),
+        hasPowerup: vi.fn(async () => true),
+      }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswer(),
+    ).resolves.toEqual(text('immediate parent'));
+  });
+
+  it('rejects a forward List because the current item is not public', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.card.findOne).mockResolvedValue({
+      type: 'forward',
+      getRem: async () => ({
+        text: text('question'),
+        hasPowerup: vi.fn(async () => true),
+        getChildrenRem: vi.fn(async () => [
+          {
+            text: text('list item'),
+            isCardItem: vi.fn(async () => true),
+            isListItem: vi.fn(async () => true),
+          },
+        ]),
+      }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswerByCardId('card-id'),
+    ).rejects.toBeInstanceOf(UnsupportedFlashcardError);
+  });
+
+  it('rejects a recursive forward Set with an expandable child answer', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.card.findOne).mockResolvedValue({
+      type: 'forward',
+      getRem: async () => ({
+        text: text('question'),
+        hasPowerup: vi.fn(async () => true),
+        getChildrenRem: vi.fn(async () => [
+          {
+            text: text('nested item'),
+            isCardItem: vi.fn(async () => true),
+            isListItem: vi.fn(async () => false),
+            hasPowerup: vi.fn(async () => true),
+          },
+        ]),
+      }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswerByCardId('card-id'),
+    ).rejects.toBeInstanceOf(UnsupportedFlashcardError);
+  });
+
+  it('rejects a Partial card owned by a multiline card item', async () => {
+    const sdk = createSdk();
+    vi.mocked(sdk.card.findOne).mockResolvedValue({
+      type: 'forward',
+      getRem: async () => ({
+        text: text('partial item'),
+        isCardItem: vi.fn(async () => true),
+      }),
+    });
+
+    await expect(
+      createRemNoteAdapterFromSdk(sdk).getFlashcardAnswerByCardId('card-id'),
+    ).rejects.toBeInstanceOf(UnsupportedFlashcardError);
+  });
+
   it('rejects a multiline answer Rem before a card ID is required', async () => {
     const sdk = createSdk();
     vi.mocked(sdk.rem.findOne).mockResolvedValue({

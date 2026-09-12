@@ -114,18 +114,19 @@ fixture was then embedded with RemNote's Video command to verify the video-only
 path in Desktop and Web; its URL was not copied into logs or committed
 documentation.
 
-## Multi-line safety verification
+## Multi-line answer verification
 
-The current safety gate treats a card as multi-line when its owning Rem has the
-public `MultiLineCard` Powerup or a direct child reports `isCardItem()`. Until
-the rendered item can be identified exactly, the adapter raises a content-free
-unsupported-card result and target resolution must not fall back to the focused
-Rem.
+The adapter treats a card as multi-line when its owning Rem has the public
+`MultiLineCard` Powerup or a direct child reports `isCardItem()`. With an exact
+`cardId`, the public card direction and child `isListItem()` flags allow a
+limited safe subset to be reconstructed. Unresolved shapes still raise a
+content-free unsupported-card result and never fall back to the focused Rem.
 
 | Card shape | Expected result | Status |
 | --- | --- | --- |
-| Forward Set/List | Fixed unsupported notification; no popup. | **Passed with a synthetic Set on Desktop and Web** for the focused parent, focused card item, and revealed-answer widget. List uses the same public Powerup/card-item safety invariant and is covered by unit tests. |
-| Backward Set/List | Fixed unsupported notification; no popup. | Covered by the direction-independent Powerup/card-item gate and unit tests. No answer-direction inference occurs before rejection. |
+| Forward Set | Join direct card-item RichText in source order. | Implemented and covered by unit tests; Desktop/Web verification with a supplied `cardId` is pending. |
+| Forward List | Fixed unsupported notification; no popup. | Numbered card items are detected through `isListItem()` and covered by unit tests. The currently rendered item is not exposed by the public SDK. |
+| Backward Set/List | Repeat the owning parent Rem text. | Implemented and covered by unit tests; Desktop/Web verification with a supplied `cardId` is pending. |
 | Partial Set/List | Fixed unsupported notification; no popup. | Covered by the same shape gate and unit tests; Signal Repeat does not inspect or guess the currently rendered subset. |
 | Recursive Set/List | Fixed unsupported notification; no popup. | Covered by the same shape gate and unit tests; Signal Repeat does not traverse descendants to construct an answer. |
 
@@ -141,9 +142,18 @@ open a popup. No card was rated or advanced during these checks.
 The safety behavior is also covered at the public SDK boundary for focused
 parent Powerup, focused card item, direct child card item, no fallback after an
 unsupported result, and fail-closed behavior when card-shape inspection fails.
-Because Set, List, Partial, and recursive variants share these shape signals,
-the implementation deliberately disables all of them instead of attempting to
-reconstruct an answer or its rendered subset.
+When `cardId` is absent, the widget still performs this direction-independent
+shape check and disables every multi-line variant. With an exact card, only a
+non-numbered, non-recursive forward Set or a backward parent answer is enabled.
+
+On 2026-09-12, a Desktop preview of an existing two-way numbered List confirmed
+that the forward card reveals items sequentially and the backward card reveals
+the immediate parent as its answer. This verifies the direction and
+`isListItem()` design assumptions without changing or rating the card. The
+Flashcard Preview surface does not mount the `FlashcardAnswer` plugin location,
+and a newly created placeholder Set did not surface in its document queue, so
+end-to-end button verification for the newly supported subset remains pending.
+No Rem/card IDs or learning content were copied into logs or documentation.
 
 ## Web MVP regression verification
 
@@ -177,6 +187,9 @@ type:
 | --- | --- | --- |
 | `forward` | `rem.backText` | Supported when non-empty |
 | `backward` | `rem.text` | Supported when non-empty |
+| Multi-line `forward` Set | Ordered direct children where `isCardItem()` is true and `isListItem()` is false | Supported when non-recursive and every item has displayable RichText |
+| Multi-line `backward` | Owning parent `rem.text` | Supported with an exact card ID |
+| Multi-line List/Partial/recursive | The current rendered item/subset/expansion is not public | Unsupported |
 | `{ clozeId }` | The answer widget context has no dedicated rendered-answer field | Out of scope for MVP |
 
 If `cardId` is absent, the card cannot be distinguished safely as forward,

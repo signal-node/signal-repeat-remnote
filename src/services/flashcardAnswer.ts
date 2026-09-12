@@ -18,10 +18,11 @@ export async function resolveFlashcardAnswerTarget(
     return null;
   }
 
-  // remId is safe for shape detection, but never for guessing answer direction.
-  await adapter.assertFlashcardRemSupported(context.remId);
-
   if (!context.cardId) {
+    // remId is safe for shape detection, but never for guessing answer
+    // direction. Preserve the fixed unsupported result for a multi-line
+    // context whose exact card is unavailable.
+    await adapter.assertFlashcardRemSupported(context.remId);
     return null;
   }
 
