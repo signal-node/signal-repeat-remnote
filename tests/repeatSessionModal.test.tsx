@@ -46,7 +46,9 @@ describe('RepeatSessionModal', () => {
     expect(markup).toContain('aria-label="Close repeat session"');
     expect(markup).toContain('autofocus=""');
     expect(markup).toContain('role="progressbar"');
-    expect(markup).toContain('aria-valuenow="50"');
+    expect(markup).toContain('aria-valuetext="Repeat session in progress"');
+    expect(markup).toContain('animation-duration:15000ms');
+    expect(markup).not.toContain('aria-valuenow');
     expect(markup).toContain('<kbd>Esc</kbd> to close');
     expect(markup).not.toContain('15 seconds');
   });

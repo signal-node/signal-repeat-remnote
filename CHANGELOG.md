@@ -22,8 +22,8 @@ based on Keep a Changelog, and the project follows Semantic Versioning.
   multi-line cards from displaying guessed or incomplete answers.
 - Moved the flashcard action below RemNote's native card content so multi-line
   child rows and scoring controls remain available.
-- Kept the repeat target subtree stable during timer progress updates so
-  RichText does not subtly jitter in the popup.
+- Removed progress-tick DOM mutations and kept the repeat target subtree stable
+  so RemNote's RichText positioning does not jitter in the popup.
 
 ### Security
 

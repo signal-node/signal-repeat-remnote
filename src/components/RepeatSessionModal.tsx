@@ -82,7 +82,7 @@ export function RepeatSessionModal({
       </div>
 
       <footer className="signal-repeat-session__footer">
-        {showProgressBar ? <ProgressBar progress={timer.progress} /> : null}
+        {showProgressBar ? <ProgressBar durationMs={durationMs} /> : null}
         {showCloseHint ? (
           <p className="signal-repeat-session__hint">
             <kbd>Esc</kbd> to close

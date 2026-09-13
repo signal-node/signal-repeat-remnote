@@ -17,7 +17,6 @@ export function RepeatRichTextContent({
             <RichText
               key={`rich-text-${index}`}
               text={part.content}
-              width="100%"
             />
           );
         }

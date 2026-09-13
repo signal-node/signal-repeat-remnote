@@ -13,7 +13,7 @@ record Rem content or media URLs.
 - Non-invasive flashcard action placement from issue #57, outside RemNote's
   native multi-line answer region.
 - Stable repeat-target rendering from issue #58, isolated from timer progress
-  updates.
+  DOM mutations and SDK width/scrollbar feedback.
 - Versioned distribution archive `signal-repeat-remnote-v0.1.2.zip`.
 
 ## Automated gates
@@ -28,7 +28,7 @@ record Rem content or media URLs.
       Rem/card mutation, or plugin-owned network path.
 
 Candidate SHA-256 from the local release-preparation build:
-`59a0812715994c0e2f0ae97245e6468c5f7ae5a367cfcb2701fa39ffa46f5552`.
+`e72ad09cf52b1a1edc90409765395a71cd3b52c1ab39107b5a197d08e90ea032`.
 Rebuild and replace this value after the release commit reaches `main`; the
 published asset must match that final build byte for byte.
 
@@ -48,9 +48,14 @@ published asset must match that final build byte for byte.
       List/Set child rows before and after reveal, leaves every scoring action
       enabled, and places Repeat below the native answer. Forward Set repeated
       both direct items and forward List retained the fixed unsupported notice.
-- [x] RemNote Web issue #58 regression: the two-line forward Set target remained
-      visually fixed while progress advanced from 2% to 75%; Escape and the
-      15-second automatic completion both closed the popup normally.
+- [x] RemNote Web issue #58 regression: the centered two-line forward Set target
+      remained fixed while the CSS progress animation advanced without DOM
+      attribute updates; the horizontal scrollbar was absent and automatic
+      completion remained correct.
+- [x] RemNote Desktop issue #58 regression: the centered two-line forward Set
+      target remained fixed from progress start through completion, the prior
+      horizontal scrollbar was absent, and automatic completion remained
+      correct.
 - [ ] After this release commit reaches `main`, reinstall or reload the
       candidate and confirm that both version fields in RemNote's Build view
       report `0.1.2`. Before merge, the live localhost manifest reports
