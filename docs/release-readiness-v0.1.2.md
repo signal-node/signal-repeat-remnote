@@ -35,8 +35,15 @@ published asset must match that final build byte for byte.
 - [x] RemNote Desktop: forward Set displays ordered direct answers.
 - [x] RemNote Desktop: backward multi-line displays the immediate parent.
 - [x] RemNote Desktop: forward List stops with the fixed unsupported notice.
-- [ ] RemNote Web: repeat the final forward Set, backward multi-line, and
-      unsupported List regression checks against the v0.1.2 candidate.
+- [x] RemNote Web: forward Set displayed both direct items on separate lines,
+      backward multi-line displayed the immediate parent, and forward List
+      stopped with the fixed unsupported notice. The checks used synthetic
+      content in Guest mode and did not rate or advance any card.
+- [ ] After this release commit reaches `main`, reinstall or reload the
+      candidate and confirm that both version fields in RemNote's Build view
+      report `0.1.2`. Before merge, the live localhost manifest reports
+      `0.1.2` while the repository-backed detail remains at `origin/main`'s
+      current `0.1.1`.
 - [ ] Install and smoke-test the ZIP downloaded from the published GitHub
       Release before replacing any pending RemNote listing submission.
 

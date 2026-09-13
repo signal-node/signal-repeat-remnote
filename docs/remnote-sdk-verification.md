@@ -166,9 +166,14 @@ answers in source order on separate lines. The public SDK also showed that a
 direct Set item can report the multi-line powerup itself, so recursive detection
 now depends on nested card-item children rather than that inherited flag. All
 checks used **Don't record answer choices** and no rating was selected. No
-Rem/card IDs or learning content were written to logs or documentation. An
-authenticated Web session was unavailable, so the Web regression remains
-pending.
+Rem/card IDs or learning content were written to logs or documentation.
+
+The same supported-subset regression passed in RemNote Web Guest mode on
+2026-09-13 using synthetic content. A forward Set opened the repeat popup with
+both direct items on separate lines, a backward multi-line card repeated its
+immediate parent, and a forward numbered List showed the fixed unsupported
+notice without opening a popup. The queue's rating controls were not used, and
+no identifiers or learning content were recorded.
 
 ## Web MVP regression verification
 
