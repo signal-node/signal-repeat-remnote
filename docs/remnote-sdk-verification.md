@@ -168,12 +168,18 @@ now depends on nested card-item children rather than that inherited flag. All
 checks used **Don't record answer choices** and no rating was selected. No
 Rem/card IDs or learning content were written to logs or documentation.
 
-The same supported-subset regression passed in RemNote Web Guest mode on
-2026-09-13 using synthetic content. A forward Set opened the repeat popup with
-both direct items on separate lines, a backward multi-line card repeated its
+RemNote Web Guest-mode testing on 2026-09-13 confirmed the target-resolution
+results with synthetic content: a forward Set opened the repeat popup with both
+direct items on separate lines, a backward multi-line card repeated its
 immediate parent, and a forward numbered List showed the fixed unsupported
-notice without opening a popup. The queue's rating controls were not used, and
-no identifiers or learning content were recorded.
+notice without opening a popup. However, the overall Web regression failed.
+Registering Signal Repeat at `WidgetLocation.FlashcardAnswer` suppressed the
+host's multi-line child rows, including before answer reveal, and left the
+List-card **Remembered** action disabled after reveal. Disabling Signal Repeat
+restored both behaviors for the same cards. No rating control was used and no
+identifiers or learning content were recorded. The release remains blocked
+until the action can be placed without altering RemNote's native card content
+or scoring controls.
 
 ## Web MVP regression verification
 

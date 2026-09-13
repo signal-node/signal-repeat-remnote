@@ -35,10 +35,14 @@ published asset must match that final build byte for byte.
 - [x] RemNote Desktop: forward Set displays ordered direct answers.
 - [x] RemNote Desktop: backward multi-line displays the immediate parent.
 - [x] RemNote Desktop: forward List stops with the fixed unsupported notice.
-- [x] RemNote Web: forward Set displayed both direct items on separate lines,
-      backward multi-line displayed the immediate parent, and forward List
-      stopped with the fixed unsupported notice. The checks used synthetic
-      content in Guest mode and did not rate or advance any card.
+- [ ] **Release blocker — RemNote Web multi-line host regression.** With Signal
+      Repeat enabled, the registered `FlashcardAnswer` widget suppresses
+      multi-line child rows in the queue. On a List card this also leaves
+      RemNote's **Remembered** action disabled. Disabling Signal Repeat restores
+      both the child rows and the enabled action for the same synthetic cards.
+      Target extraction itself still produced the expected forward Set,
+      backward parent, and unsupported List results, but that does not satisfy
+      the gate while the host study UI is altered.
 - [ ] After this release commit reaches `main`, reinstall or reload the
       candidate and confirm that both version fields in RemNote's Build view
       report `0.1.2`. Before merge, the live localhost manifest reports
