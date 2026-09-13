@@ -12,12 +12,14 @@ record Rem content or media URLs.
   from pull request #55.
 - Non-invasive flashcard action placement from issue #57, outside RemNote's
   native multi-line answer region.
+- Stable repeat-target rendering from issue #58, isolated from timer progress
+  updates.
 - Versioned distribution archive `signal-repeat-remnote-v0.1.2.zip`.
 
 ## Automated gates
 
 - [x] `mise run typecheck`
-- [x] `mise run test` (14 files, 123 tests).
+- [x] `mise run test` (14 files, 124 tests).
 - [x] `mise run build` (SDK validation passed; only the existing webpack size
       advisories remain).
 - [x] Candidate ZIP is non-empty and passes `unzip -t`.
@@ -26,7 +28,7 @@ record Rem content or media URLs.
       Rem/card mutation, or plugin-owned network path.
 
 Candidate SHA-256 from the local release-preparation build:
-`4da9791b1a84aa119f18162d1406e3e98581067aa3330c4236405ef4f6bbee02`.
+`59a0812715994c0e2f0ae97245e6468c5f7ae5a367cfcb2701fa39ffa46f5552`.
 Rebuild and replace this value after the release commit reaches `main`; the
 published asset must match that final build byte for byte.
 
@@ -46,6 +48,9 @@ published asset must match that final build byte for byte.
       List/Set child rows before and after reveal, leaves every scoring action
       enabled, and places Repeat below the native answer. Forward Set repeated
       both direct items and forward List retained the fixed unsupported notice.
+- [x] RemNote Web issue #58 regression: the two-line forward Set target remained
+      visually fixed while progress advanced from 2% to 75%; Escape and the
+      15-second automatic completion both closed the popup normally.
 - [ ] After this release commit reaches `main`, reinstall or reload the
       candidate and confirm that both version fields in RemNote's Build view
       report `0.1.2`. Before merge, the live localhost manifest reports

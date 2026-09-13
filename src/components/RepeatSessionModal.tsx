@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect } from 'react';
+import { memo, type ReactNode, useCallback, useEffect } from 'react';
 import { useRepeatTimer } from '../hooks/useRepeatTimer';
 import type { RepeatSessionCloseReason } from '../types/repeatSession';
 import { ProgressBar } from './ProgressBar';
@@ -10,6 +10,25 @@ export type RepeatSessionModalProps = {
   showCloseHint: boolean;
   onClose: (reason: RepeatSessionCloseReason) => void;
 };
+
+type RepeatSessionTargetProps = {
+  targetContent: ReactNode;
+};
+
+export function hasSameRepeatSessionTarget(
+  previous: Readonly<RepeatSessionTargetProps>,
+  next: Readonly<RepeatSessionTargetProps>,
+): boolean {
+  return Object.is(previous.targetContent, next.targetContent);
+}
+
+const StableRepeatSessionTarget = memo(function StableRepeatSessionTarget({
+  targetContent,
+}: RepeatSessionTargetProps): JSX.Element {
+  return (
+    <div className="signal-repeat-session__target">{targetContent}</div>
+  );
+}, hasSameRepeatSessionTarget);
 
 export function isRepeatSessionCancelKey(key: string): boolean {
   return key === 'Escape';
@@ -59,7 +78,7 @@ export function RepeatSessionModal({
       </button>
 
       <div className="signal-repeat-session__content">
-        <div className="signal-repeat-session__target">{targetContent}</div>
+        <StableRepeatSessionTarget targetContent={targetContent} />
       </div>
 
       <footer className="signal-repeat-session__footer">
