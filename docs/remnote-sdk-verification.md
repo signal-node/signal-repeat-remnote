@@ -182,13 +182,12 @@ until the action can be placed without altering RemNote's native card content
 or scoring controls.
 
 Issue #57 moves the action to `WidgetLocation.FlashcardUnder`, which exposes the
-same public flashcard context without occupying the native answer region. A
-post-fix Desktop synthetic queue confirmed that List and Set child rows remain
-visible before and after reveal, every scoring action remains enabled, and the
-Repeat action renders below the native content. Forward Set still repeated both
-direct items on separate lines, while forward List still showed the fixed
-unsupported notice without a popup. No score was selected. The equivalent Web
-regression remains a release gate.
+same public flashcard context without occupying the native answer region.
+Post-fix Desktop and Web synthetic queues confirmed that List and Set child rows
+remain visible before and after reveal, every scoring action remains enabled,
+and the Repeat action renders below the native content. Forward Set still
+repeated both direct items on separate lines, while forward List still showed
+the fixed unsupported notice without a popup. No score was selected.
 
 ## Web MVP regression verification
 

@@ -42,10 +42,10 @@ published asset must match that final build byte for byte.
       reveal, leaves every scoring action enabled, and places Repeat below the
       native answer. Forward Set and unsupported forward List behavior also
       remained correct in the same synthetic queue.
-- [ ] **Release blocker — repeat issue #57 regression in RemNote Web.** The
-      original Guest-mode failure occurred with `FlashcardAnswer`; confirm that
-      the `FlashcardUnder` candidate likewise preserves child rows and scoring
-      controls in Web before release.
+- [x] RemNote Web issue #57 regression: `FlashcardUnder` preserves native
+      List/Set child rows before and after reveal, leaves every scoring action
+      enabled, and places Repeat below the native answer. Forward Set repeated
+      both direct items and forward List retained the fixed unsupported notice.
 - [ ] After this release commit reaches `main`, reinstall or reload the
       candidate and confirm that both version fields in RemNote's Build view
       report `0.1.2`. Before merge, the live localhost manifest reports
