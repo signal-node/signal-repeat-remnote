@@ -45,10 +45,13 @@ describe('MVP accessibility style boundary', () => {
     const styles = readFileSync(join(SOURCE_ROOT, 'index.css'), 'utf8');
 
     expect(styles).toMatch(
-      /\.signal-repeat-session__content\s*\{[^}]*overflow:\s*auto/s,
+      /\.signal-repeat-session__content\s*\{[^}]*overflow-y:\s*auto/s,
     );
     expect(styles).toMatch(
-      /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.signal-repeat-progress__fill\s*\{[^}]*transition:\s*none/s,
+      /\.signal-repeat-session__content\s*\{[^}]*overflow-x:\s*hidden/s,
+    );
+    expect(styles).toMatch(
+      /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.signal-repeat-progress__fill\s*\{[^}]*animation:\s*none/s,
     );
     expect(styles).toMatch(
       /\.signal-repeat-session__close:focus-visible\s*\{[^}]*outline:/s,

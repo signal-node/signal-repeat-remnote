@@ -11,7 +11,7 @@ not replace RemNote's spaced-repetition scheduler.
 
 ## Installation
 
-Signal Repeat v0.1.1 targets RemNote Web and Desktop. Mobile activation is not
+Signal Repeat v0.1.2 targets RemNote Web and Desktop. Mobile activation is not
 enabled. After the plugin is published, open **Settings → Plugins** in RemNote,
 find **Signal Repeat**, and install it. Release candidates are distributed as
 `signal-repeat-remnote-v<version>.zip` on this repository's GitHub Releases page.
@@ -98,7 +98,7 @@ mise run build
 ```
 
 The build validates the manifest and creates a versioned archive such as
-`signal-repeat-remnote-v0.1.1.zip`, using the version in `package.json`. See
+`signal-repeat-remnote-v0.1.2.zip`, using the version in `package.json`. See
 [`docs/development.md`](docs/development.md) for the test and integration
 workflow and [`docs/architecture.md`](docs/architecture.md) for module
 boundaries.

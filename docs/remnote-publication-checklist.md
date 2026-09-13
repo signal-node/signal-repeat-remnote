@@ -14,9 +14,9 @@ discoverable inside RemNote.
 - Product: Signal Repeat for RemNote
 - Publisher: Signal, Not Volume
 - Repository: <https://github.com/signal-node/signal-repeat-remnote>
-- Candidate version: `0.1.1`
+- Candidate version: `0.1.2`
 - Candidate release: pending validation, merge, and tag
-- Candidate asset: `signal-repeat-remnote-v0.1.1.zip`
+- Candidate asset: `signal-repeat-remnote-v0.1.2.zip`
 - Candidate commit and SHA-256: record after the verified build reaches `main`
 - Stable baseline release:
   <https://github.com/signal-node/signal-repeat-remnote/releases/tag/v0.1.0>
@@ -27,7 +27,7 @@ discoverable inside RemNote.
 
 ## Step 1 — Verify the immutable release candidate
 
-- [ ] Annotated `v0.1.1` tag points to the verified `main` commit.
+- [ ] Annotated `v0.1.2` tag points to the verified `main` commit.
 - [ ] GitHub Release is public and marked Latest.
 - [ ] Published ZIP downloads successfully.
 - [ ] Downloaded ZIP is byte-for-byte identical to the local verified build.
@@ -45,7 +45,7 @@ discoverable inside RemNote.
 3. Select **Upload plugin**.
 4. Upload the ZIP downloaded from the GitHub Release, not an unverified local
    rebuild.
-5. Confirm that RemNote displays Signal Repeat version `0.1.0`.
+5. Confirm that RemNote displays Signal Repeat version `0.1.2`.
 6. Repeat the acceptance smoke test using synthetic content.
 7. Confirm that no Rem content, card rating, queue state, or scheduling data is
    changed.
@@ -67,8 +67,8 @@ Required product information:
 - Privacy statement: use the **Privacy and permissions** section of `README.md`.
 - Installation and usage: use the matching sections of `README.md`.
 - Supported platforms: explicitly state **RemNote Web and Desktop**.
-- Known limitation: mobile is disabled in v0.1.0; cloze-answer extraction is
-  not included.
+- Known limitations: mobile is disabled; cloze-answer extraction and List,
+  Partial, and recursive multi-line answer extraction are not included.
 
 Visual material:
 
@@ -143,9 +143,9 @@ Suggested message:
 > Hello RemNote team, I would like to submit Signal Repeat for listing in
 > Settings → Plugins → Browse. It is a focused repetition plugin for RemNote Web
 > and Desktop. The public source repository is
-> https://github.com/signal-node/signal-repeat-remnote and the verified v0.1.0
+> https://github.com/signal-node/signal-repeat-remnote and the verified v0.1.2
 > release is
-> https://github.com/signal-node/signal-repeat-remnote/releases/tag/v0.1.0.
+> https://github.com/signal-node/signal-repeat-remnote/releases/tag/v0.1.2.
 > The plugin does not transmit or persist learning content and does not modify
 > Rem content, flashcard ratings, queue state, or scheduling data. Could you
 > please provide the current submission requirements and review process for a
@@ -159,7 +159,7 @@ method.
 
 Before submission, confirm:
 
-- [ ] The exact submitted ZIP has the published v0.1.1 SHA-256 recorded after
+- [ ] The exact submitted ZIP has the published v0.1.2 SHA-256 recorded after
   release verification.
 - [ ] The listing states Web/Desktop support accurately.
 - [ ] Mobile support is not claimed.

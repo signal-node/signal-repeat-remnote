@@ -1,18 +1,21 @@
+import { memo } from 'react';
+
 type ProgressBarProps = {
-  progress: number;
+  durationMs: number;
 };
 
-function clampProgress(progress: number): number {
-  if (!Number.isFinite(progress)) {
+export function normalizeProgressDuration(durationMs: number): number {
+  if (!Number.isFinite(durationMs) || durationMs <= 0) {
     return 0;
   }
 
-  return Math.min(1, Math.max(0, progress));
+  return durationMs;
 }
 
-export function ProgressBar({ progress }: ProgressBarProps): JSX.Element {
-  const normalizedProgress = clampProgress(progress);
-  const percentage = Math.round(normalizedProgress * 100);
+export const ProgressBar = memo(function ProgressBar({
+  durationMs,
+}: ProgressBarProps): JSX.Element {
+  const normalizedDurationMs = normalizeProgressDuration(durationMs);
 
   return (
     <div
@@ -21,12 +24,12 @@ export function ProgressBar({ progress }: ProgressBarProps): JSX.Element {
       aria-label="Repeat session progress"
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-valuenow={percentage}
+      aria-valuetext="Repeat session in progress"
     >
       <div
         className="signal-repeat-progress__fill"
-        style={{ transform: `scaleX(${normalizedProgress})` }}
+        style={{ animationDuration: `${normalizedDurationMs}ms` }}
       />
     </div>
   );
-}
+});

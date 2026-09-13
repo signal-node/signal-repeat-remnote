@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { RichTextInterface } from '@remnote/plugin-sdk';
+import type { RichTextInterface, RNPlugin } from '@remnote/plugin-sdk';
 import {
+  createRemNoteAdapter,
   createRemNoteAdapterFromSdk,
   RemNoteAdapterError,
   UnsupportedFlashcardError,
@@ -30,7 +31,7 @@ function createSdk(): RemNoteSdkFacade {
       registerCommand: vi.fn(async () => undefined),
       registerPopupWidget: vi.fn(async () => undefined),
       registerSelectedTextWidget: vi.fn(async () => undefined),
-      registerFlashcardAnswerWidget: vi.fn(async () => undefined),
+      registerFlashcardActionWidget: vi.fn(async () => undefined),
       toast: vi.fn(async () => undefined),
     },
     settings: {
@@ -725,13 +726,28 @@ describe('RemNote adapter registration', () => {
     );
   });
 
-  it('registers the flashcard-answer widget through the SDK boundary', async () => {
+  it('registers the flashcard action below native card content', async () => {
     const sdk = createSdk();
 
-    await createRemNoteAdapterFromSdk(sdk).registerFlashcardAnswerWidget();
+    await createRemNoteAdapterFromSdk(sdk).registerFlashcardActionWidget();
 
-    expect(sdk.app.registerFlashcardAnswerWidget).toHaveBeenCalledWith(
+    expect(sdk.app.registerFlashcardActionWidget).toHaveBeenCalledWith(
       'flashcardAnswer',
+    );
+  });
+
+  it('uses FlashcardUnder instead of the native answer region', async () => {
+    const registerWidget = vi.fn(async () => undefined);
+    const plugin = {
+      app: { registerWidget },
+    } as unknown as RNPlugin;
+
+    await createRemNoteAdapter(plugin).registerFlashcardActionWidget();
+
+    expect(registerWidget).toHaveBeenCalledWith(
+      'flashcardAnswer',
+      'FlashcardUnder',
+      { dimensions: { height: 'auto', width: '100%' } },
     );
   });
 

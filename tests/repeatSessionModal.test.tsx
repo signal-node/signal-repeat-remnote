@@ -15,6 +15,7 @@ vi.mock('../src/hooks/useRepeatTimer', () => ({
 }));
 
 import {
+  hasSameRepeatSessionTarget,
   isRepeatSessionCancelKey,
   RepeatSessionModal,
 } from '../src/components/RepeatSessionModal';
@@ -45,7 +46,9 @@ describe('RepeatSessionModal', () => {
     expect(markup).toContain('aria-label="Close repeat session"');
     expect(markup).toContain('autofocus=""');
     expect(markup).toContain('role="progressbar"');
-    expect(markup).toContain('aria-valuenow="50"');
+    expect(markup).toContain('aria-valuetext="Repeat session in progress"');
+    expect(markup).toContain('animation-duration:15000ms');
+    expect(markup).not.toContain('aria-valuenow');
     expect(markup).toContain('<kbd>Esc</kbd> to close');
     expect(markup).not.toContain('15 seconds');
   });
@@ -101,6 +104,23 @@ describe('RepeatSessionModal', () => {
     expect(markup).toContain('Listen');
     expect(markup).toContain('data-rich-text-kind="a"');
     expect(markup).not.toContain('private-audio.mp3');
+  });
+
+  it('reuses the target subtree during progress-only timer updates', () => {
+    const targetContent = <span>Stable RichText host</span>;
+
+    expect(
+      hasSameRepeatSessionTarget(
+        { targetContent },
+        { targetContent },
+      ),
+    ).toBe(true);
+    expect(
+      hasSameRepeatSessionTarget(
+        { targetContent },
+        { targetContent: <span>Changed RichText host</span> },
+      ),
+    ).toBe(false);
   });
 
   it('recognizes only Escape as the cancel key', () => {
