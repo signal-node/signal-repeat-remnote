@@ -10,12 +10,14 @@ record Rem content or media URLs.
   pull request #53.
 - Exact supported multi-line answers and safe rejection of unsupported shapes
   from pull request #55.
+- Non-invasive flashcard action placement from issue #57, outside RemNote's
+  native multi-line answer region.
 - Versioned distribution archive `signal-repeat-remnote-v0.1.2.zip`.
 
 ## Automated gates
 
 - [x] `mise run typecheck`
-- [x] `mise run test` (14 files, 122 tests).
+- [x] `mise run test` (14 files, 123 tests).
 - [x] `mise run build` (SDK validation passed; only the existing webpack size
       advisories remain).
 - [x] Candidate ZIP is non-empty and passes `unzip -t`.
@@ -24,7 +26,7 @@ record Rem content or media URLs.
       Rem/card mutation, or plugin-owned network path.
 
 Candidate SHA-256 from the local release-preparation build:
-`60de1f1d19f51132c08ec198b9d80c02b2787bf6f04926ad3478b62c76207265`.
+`4da9791b1a84aa119f18162d1406e3e98581067aa3330c4236405ef4f6bbee02`.
 Rebuild and replace this value after the release commit reaches `main`; the
 published asset must match that final build byte for byte.
 
@@ -35,14 +37,15 @@ published asset must match that final build byte for byte.
 - [x] RemNote Desktop: forward Set displays ordered direct answers.
 - [x] RemNote Desktop: backward multi-line displays the immediate parent.
 - [x] RemNote Desktop: forward List stops with the fixed unsupported notice.
-- [ ] **Release blocker — RemNote Web multi-line host regression.** With Signal
-      Repeat enabled, the registered `FlashcardAnswer` widget suppresses
-      multi-line child rows in the queue. On a List card this also leaves
-      RemNote's **Remembered** action disabled. Disabling Signal Repeat restores
-      both the child rows and the enabled action for the same synthetic cards.
-      Target extraction itself still produced the expected forward Set,
-      backward parent, and unsupported List results, but that does not satisfy
-      the gate while the host study UI is altered.
+- [x] RemNote Desktop issue #57 regression: registering the action at
+      `FlashcardUnder` preserves native List/Set child rows before and after
+      reveal, leaves every scoring action enabled, and places Repeat below the
+      native answer. Forward Set and unsupported forward List behavior also
+      remained correct in the same synthetic queue.
+- [ ] **Release blocker — repeat issue #57 regression in RemNote Web.** The
+      original Guest-mode failure occurred with `FlashcardAnswer`; confirm that
+      the `FlashcardUnder` candidate likewise preserves child rows and scoring
+      controls in Web before release.
 - [ ] After this release commit reaches `main`, reinstall or reload the
       candidate and confirm that both version fields in RemNote's Build view
       report `0.1.2`. Before merge, the live localhost manifest reports

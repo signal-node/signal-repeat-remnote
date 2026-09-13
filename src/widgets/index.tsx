@@ -25,7 +25,7 @@ async function onActivate(plugin: ReactRNPlugin): Promise<void> {
     await adapter.registerRepeatSettings();
     await adapter.registerRepeatPopup();
     await adapter.registerSelectedTextMenu();
-    await adapter.registerFlashcardAnswerWidget();
+    await adapter.registerFlashcardActionWidget();
     await adapter.registerCommand(controller.command);
   } catch (cause) {
     controller.deactivate();

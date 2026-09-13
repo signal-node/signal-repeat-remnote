@@ -20,6 +20,8 @@ based on Keep a Changelog, and the project follows Semantic Versioning.
   retaining explicit, non-autoplay media controls.
 - Prevented List, Partial, recursive, unmatched, and otherwise unsupported
   multi-line cards from displaying guessed or incomplete answers.
+- Moved the flashcard action below RemNote's native card content so multi-line
+  child rows and scoring controls remain available.
 
 ### Security
 

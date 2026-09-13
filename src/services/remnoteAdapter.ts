@@ -112,7 +112,7 @@ export type RemNoteSdkFacade = {
       },
     ) => Promise<void>;
     registerSelectedTextWidget: (fileName: string) => Promise<void>;
-    registerFlashcardAnswerWidget: (fileName: string) => Promise<void>;
+    registerFlashcardActionWidget: (fileName: string) => Promise<void>;
     toast: (message: string) => Promise<void>;
   };
   settings: RepeatSettingsApi;
@@ -162,7 +162,7 @@ export type RemNoteAdapter = {
   registerRepeatSettings: () => Promise<void>;
   registerRepeatPopup: () => Promise<void>;
   registerSelectedTextMenu: () => Promise<void>;
-  registerFlashcardAnswerWidget: () => Promise<void>;
+  registerFlashcardActionWidget: () => Promise<void>;
   subscribeFlashcardAnswerChanges: (listener: () => void) => () => void;
   registerCommand: (command: RepeatCommand) => Promise<void>;
   openRepeatPopup: (context: RepeatPopupContextData) => Promise<void>;
@@ -528,8 +528,8 @@ export function createRemNoteAdapterFromSdk(
       }),
     registerSelectedTextMenu: () =>
       sdk.app.registerSelectedTextWidget('selectedText'),
-    registerFlashcardAnswerWidget: () =>
-      sdk.app.registerFlashcardAnswerWidget('flashcardAnswer'),
+    registerFlashcardActionWidget: () =>
+      sdk.app.registerFlashcardActionWidget('flashcardAnswer'),
     subscribeFlashcardAnswerChanges: (listener) =>
       sdk.events.subscribeFlashcardAnswerChanges(listener),
     registerCommand: (command) => sdk.app.registerCommand(command),
@@ -543,7 +543,10 @@ export function createRemNoteAdapterFromSdk(
 export function createRemNoteAdapter(plugin: RNPlugin): RemNoteAdapter {
   const popupLocation = 'Popup' as WidgetLocation;
   const selectedTextMenuLocation = 'SelectedTextMenu' as WidgetLocation;
-  const flashcardAnswerLocation = 'FlashcardAnswer' as WidgetLocation;
+  // FlashcardAnswer replaces/interferes with RemNote's native multi-line card
+  // content. FlashcardUnder exposes the same public context without occupying
+  // the answer region.
+  const flashcardActionLocation = 'FlashcardUnder' as WidgetLocation;
 
   return createRemNoteAdapterFromSdk({
     editor: {
@@ -572,8 +575,8 @@ export function createRemNoteAdapter(plugin: RNPlugin): RemNoteAdapter {
           dimensions: { height: 'auto', width: '100%' },
           widgetTabTitle: 'Signal Repeat',
         }),
-      registerFlashcardAnswerWidget: (fileName) =>
-        plugin.app.registerWidget(fileName, flashcardAnswerLocation, {
+      registerFlashcardActionWidget: (fileName) =>
+        plugin.app.registerWidget(fileName, flashcardActionLocation, {
           dimensions: { height: 'auto', width: '100%' },
         }),
       toast: (message) => plugin.app.toast(message),
@@ -600,7 +603,7 @@ export function createRemNoteAdapter(plugin: RNPlugin): RemNoteAdapter {
         return { contextData: context.contextData };
       },
       getFlashcardAnswerContext: () =>
-        plugin.widget.getWidgetContext<WidgetLocation.FlashcardAnswer>(),
+        plugin.widget.getWidgetContext<WidgetLocation.FlashcardUnder>(),
       openPopup: (widgetFileName, contextData, clickOutsideToClose) =>
         plugin.widget.openPopup(
           widgetFileName,

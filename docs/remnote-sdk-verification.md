@@ -16,7 +16,7 @@ declarations expose every API needed for the MVP:
 | Selected text | `editor.getSelectedText()` returns `TextSelection \| undefined` | Read `richText` from the returned selection. Retain no content after the popup closes. |
 | Focused target | `editor.getFocusedEditorText()` and `focus.getFocusedRem()` | Prefer non-empty focused editor text, then the focused Rem's `text`. |
 | Popup | `widget.openPopup()` and `widget.closePopup(restoreFocus?)` | Pass target data through popup context and close with `closePopup(true)`. |
-| Flashcard answer | `FlashcardAnswer` context supplies `remId`, optional `cardId`, and `revealed` | Hide the action until `revealed` is true. Resolve direction by `cardId`, or by an exact `queue.getCurrentCard()`/`remId` match when the ID is absent. |
+| Flashcard answer | `FlashcardUnder` context supplies `remId`, optional `cardId`, and `revealed` | Place the action below native card content and hide it until `revealed` is true. Resolve direction by `cardId`, or by an exact `queue.getCurrentCard()`/`remId` match when the ID is absent. |
 | Shortcut | `app.registerCommand()` accepts `keyboardShortcut` | Register the specification default, `alt+m`; re-check conflicts in Desktop and Web. |
 | Settings | Dropdown, boolean, string, and number registration APIs | Register the three MVP settings in issue #15 and read them through a dedicated service. |
 | Notification | `app.toast(message)` | Use only fixed messages that contain no learning content. |
@@ -124,8 +124,8 @@ content-free unsupported-card result and never fall back to the focused Rem.
 
 | Card shape | Expected result | Status |
 | --- | --- | --- |
-| Forward Set | Join direct card-item RichText in source order and omit only structurally empty editor placeholders. | Passed in a 2026-09-13 Desktop real queue: the popup showed both placeholder answers on separate lines. Unit tests also keep non-empty unsupported RichText fail-closed. Web regression remains pending. |
-| Forward List | Fixed unsupported notification; no popup. | Numbered card items are detected through `isListItem()`. A 2026-09-13 Desktop real-queue check confirmed the fixed notification and no popup after contextual parent resolution. The currently rendered item is not exposed by the public SDK. |
+| Forward Set | Join direct card-item RichText in source order and omit only structurally empty editor placeholders. | Passed in a 2026-09-13 Desktop real queue: the popup showed both placeholder answers on separate lines. Unit tests also keep non-empty unsupported RichText fail-closed. A second Desktop check with `FlashcardUnder` preserved both native answer rows and all scoring controls. Web regression remains pending. |
+| Forward List | Fixed unsupported notification; no popup. | Numbered card items are detected through `isListItem()`. A 2026-09-13 Desktop real-queue check confirmed the fixed notification and no popup after contextual parent resolution. A second Desktop check with `FlashcardUnder` preserved the native row and all scoring controls. The currently rendered item is not exposed by the public SDK. |
 | Backward Set/List | Repeat the owning parent Rem text. | Passed in a 2026-09-12 Desktop real queue: the popup showed the immediate parent. Web regression remains pending. |
 | Partial Set/List | Fixed unsupported notification; no popup. | Covered by the same shape gate and unit tests; Signal Repeat does not inspect or guess the currently rendered subset. |
 | Recursive Set/List | Fixed unsupported notification; no popup. | Covered by the same shape gate and unit tests; Signal Repeat does not traverse descendants to construct an answer. |
@@ -180,6 +180,15 @@ restored both behaviors for the same cards. No rating control was used and no
 identifiers or learning content were recorded. The release remains blocked
 until the action can be placed without altering RemNote's native card content
 or scoring controls.
+
+Issue #57 moves the action to `WidgetLocation.FlashcardUnder`, which exposes the
+same public flashcard context without occupying the native answer region. A
+post-fix Desktop synthetic queue confirmed that List and Set child rows remain
+visible before and after reveal, every scoring action remains enabled, and the
+Repeat action renders below the native content. Forward Set still repeated both
+direct items on separate lines, while forward List still showed the fixed
+unsupported notice without a popup. No score was selected. The equivalent Web
+regression remains a release gate.
 
 ## Web MVP regression verification
 
@@ -244,7 +253,7 @@ placeholder or real learning text into this document or DevTools.
 | Focus restoration | Close the popup with its button, then type one placeholder character without clicking the editor. | `closePopup(true)` returns focus to the prior RemNote editing selection. | Passed: the selected three placeholder characters were replaced by the typed character; the manual edit was then undone. |
 | Shortcut and toast | Press Option+M on macOS. | A fixed toast appears and the verification popup opens. | Passed: the command opened the popup; the action awaited the fixed toast first. |
 | Settings contract | Register a dropdown and two booleans in the harness activation path. | The 0.0.46 methods accept the specification's setting shapes. | Passed by strict typecheck and successful plugin activation; product settings are implemented in issue #15. |
-| Flashcard placement | Reveal a card in the queue. | The action is absent before reveal and available after reveal. | Passed: `FlashcardAnswer`, `FlashcardExtraDetail`, and `FlashcardUnder` rendered after reveal when context was refreshed on `RevealAnswer`. Use `FlashcardAnswer` for the MVP. |
+| Flashcard placement | Reveal a card in the queue. | The action is absent before reveal, available below native content after reveal, and does not alter child rows or scoring controls. | Passed with `FlashcardUnder`. Issue #57 showed that `FlashcardAnswer` occupied the native multi-line answer region even though it exposed the same context. |
 | Flashcard context | Read the answer widget context after reveal. | `revealed` gates the action; `remId` and optional `cardId` follow the SDK contract. | `revealed` was verified on Desktop. The 0.0.46 contract makes `remId` required and `cardId` optional; absence of `cardId` must be handled without guessing. |
 | Forward card | Resolve a forward card through `cardId`. | Use the owning Rem's non-empty `backText`. | Implemented and verified in RemNote Web for issue #22. |
 | Reverse card | Resolve a reverse card through `cardId`. | Use the owning Rem's non-empty `text`. | Implemented and verified in RemNote Web for issue #22. |
@@ -260,8 +269,9 @@ placeholder or real learning text into this document or DevTools.
   Selected Text Menu, which did not render on the tested Desktop version.
 - Refresh flashcard widget context when the queue loads a card or reveals its
   answer; a one-time context read remains stale across those transitions.
-- Register the MVP action only at `WidgetLocation.FlashcardAnswer`; the other
-  working placements would duplicate the control.
+- Register the action only at `WidgetLocation.FlashcardUnder`. Do not use
+  `FlashcardAnswer`: issue #57 demonstrated that it suppresses native
+  multi-line rows and can disable List scoring controls.
 - When `cardId` is missing, require an exact current-card/context-Rem match;
   treat a mismatch, unavailable current card, and Cloze as unsupported instead
   of guessing.
