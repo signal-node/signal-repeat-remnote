@@ -38,23 +38,7 @@ discoverable inside RemNote.
 - [ ] Selected-text, flashcard-answer, and popup entry points render from the
   downloaded archive.
 
-## Step 2 — Install the published ZIP in RemNote
-
-1. Open **Settings → Plugins → Build**.
-2. Disable the localhost development copy of Signal Repeat.
-3. Select **Upload plugin**.
-4. Upload the ZIP downloaded from the GitHub Release, not an unverified local
-   rebuild.
-5. Confirm that RemNote displays Signal Repeat version `0.1.2`.
-6. Repeat the acceptance smoke test using synthetic content.
-7. Confirm that no Rem content, card rating, queue state, or scheduling data is
-   changed.
-8. Confirm that no learning content is logged, stored, or transmitted.
-
-Do not keep the localhost build and release build active simultaneously during
-acceptance testing.
-
-## Step 3 — Prepare listing material
+## Step 2 — Prepare listing material
 
 Required product information:
 
@@ -128,36 +112,7 @@ does not specify them.
 The dedicated logo is introduced in v0.1.1. Do not replace or move the existing
 v0.1.0 tag or artifact.
 
-## Step 4 — Confirm RemNote's current submission channel
-
-The public plugin documentation explains development and local installation,
-but does not currently document a self-service public-listing submission form.
-The in-app **Build** tab exposes **Upload plugin** and **Develop from localhost**,
-but no public submission control was visible during this review.
-
-Contact RemNote support or the official plugin developer channel and ask for
-the current review/submission path before sending the binary anywhere else.
-
-Suggested message:
-
-> Hello RemNote team, I would like to submit Signal Repeat for listing in
-> Settings → Plugins → Browse. It is a focused repetition plugin for RemNote Web
-> and Desktop. The public source repository is
-> https://github.com/signal-node/signal-repeat-remnote and the verified v0.1.2
-> release is
-> https://github.com/signal-node/signal-repeat-remnote/releases/tag/v0.1.2.
-> The plugin does not transmit or persist learning content and does not modify
-> Rem content, flashcard ratings, queue state, or scheduling data. Could you
-> please provide the current submission requirements and review process for a
-> community plugin listing?
-
-Record the response and update this checklist if RemNote requires a particular
-logo size, screenshot dimensions, form, repository permission, or delivery
-method.
-
-## Step 5 — Submit for review
-
-Before submission, confirm:
+Before uploading, confirm:
 
 - [ ] The exact submitted ZIP has the published v0.1.2 SHA-256 recorded after
   release verification.
@@ -168,18 +123,65 @@ Before submission, confirm:
 - [ ] Screenshots contain synthetic content only.
 - [ ] Any required dedicated logo has been added through a new release.
 
-Submit only through the channel confirmed by RemNote. Save the submission ID or
-support conversation link without copying private account details into the
-repository.
+## Step 3 — Upload the published ZIP and submit for review
 
-## Step 6 — Respond to review feedback
+The current public-listing submission entry point is **Settings → Plugins →
+Build → Upload plugin**. Selecting **Upload plugin** opens a local file picker.
+Uploading the archive installs the build and submits it for RemNote's manual
+marketplace review; it is not only a private installation step.
+
+1. Confirm that the repository URL in the manifest points to the public
+   <https://github.com/signal-node/signal-repeat-remnote> repository.
+2. Open **Settings → Plugins → Build**.
+3. Disable the localhost development copy of Signal Repeat.
+4. Select **Upload plugin** and choose the exact ZIP downloaded from the GitHub
+   Release, not an unverified local rebuild.
+5. Confirm that RemNote reports the plugin was uploaded successfully and is
+   waiting for approval before appearing in the marketplace.
+6. Record the submitted plugin ID, exact version, Git commit, SHA-256, and
+   submission date without copying private account details into the repository.
+7. Confirm that RemNote displays Signal Repeat version `0.1.2` in the Build
+   list.
+8. Repeat the acceptance smoke test using synthetic content.
+9. Confirm that no Rem content, card rating, queue state, or scheduling data is
+   changed.
+10. Confirm that no learning content is logged, stored, or transmitted.
+
+Do not keep the localhost build and uploaded release build active simultaneously
+during acceptance testing. Uploading is an external submission action; obtain
+the product owner's confirmation immediately before choosing the ZIP.
+
+## Step 4 — Track the manual review
+
+The submission is self-service, but review management is currently manual.
+RemNote's upload confirmation says that the plugin will appear in the
+marketplace only after approval and that its GitHub repository must be public.
+
+The following operational details were confirmed in the official RemNote
+Discord `#🔌・plugins` channel in August and September 2026:
+
+- RemNote staff described approval, replacement, and withdrawal handling as a
+  human, manual process without a complete self-service tracking or cancellation
+  interface.
+- Community reports describe review as usually taking a few days. A RemNote
+  staff member reported that some recent responses were completed within 24
+  hours, but this is not a published service-level commitment.
+- One observed plugin was submitted on September 2 and reported as available in
+  the marketplace on September 5.
+
+If the submission needs follow-up, replacement, or withdrawal, post in the
+official RemNote Discord `#🔌・plugins` channel and mention **Nate @ RemNote**.
+Include only the plugin name and plugin ID needed to identify the submission;
+do not post private account details or user learning content.
+
+## Step 5 — Respond to review feedback
 
 - Convert requested code changes into a GitHub Issue and focused Pull Request.
 - Re-run typecheck, tests, build, ZIP integrity, and RemNote acceptance tests.
 - Publish code or binary changes as a new patch version.
 - Do not overwrite an existing tag or release asset.
 
-## Step 7 — Verify the public listing
+## Step 6 — Verify the public listing
 
 After approval:
 
@@ -199,3 +201,5 @@ After approval:
 - Local development/install guide:
   <https://plugins.remnote.com/getting-started/quick_start_guide>
 - RemNote plugin access: <https://help.remnote.com/en/articles/6030851-resources-apps-plugins>
+- Official RemNote Discord `#🔌・plugins` channel:
+  <https://discord.com/channels/689979930804617224/995328932624744479>
