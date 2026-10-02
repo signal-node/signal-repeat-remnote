@@ -10,7 +10,8 @@
     "patch": 2
   },
   "theme": [],
-  "enableOnMobile": false,
+  "enableOnMobile": true,
+  "unlisted": true,
   "description": "Repeat only what matters with short, focused sessions in RemNote.",
   "requestNative": false,
   "requiredScopes": [
